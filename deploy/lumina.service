@@ -1,0 +1,26 @@
+[Unit]
+Description=Lumina backend (Fastify + TypeScript)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lumina
+Group=lumina
+WorkingDirectory=/opt/lumina/backend
+EnvironmentFile=/etc/lumina/lumina.env
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
