@@ -8,7 +8,7 @@
 
 - 团队名称：光影志
 - 团队成员：BlueBlueblues
-- 代码仓库：https://github.com/BlueBlueblues/guangyingzhi
+- 代码仓库：https://github.com/BlueBlueblues/Lumina
 
 ---
 
