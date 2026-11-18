@@ -9,6 +9,7 @@
 - 团队名称：光影志
 - 团队成员：BlueBlueblues、taokenailong、yeapower19
 - 代码仓库：https://github.com/BlueBlueblues/Lumina
+- 技术文档：[docs/光影志_Lumina_技术文档.pdf](docs/光影志_Lumina_技术文档.pdf)（含 2026-11-18 补充说明）
 
 ---
 
@@ -79,6 +80,12 @@ lumina/
 │   ├── test/                   # schemas / tokens / evidence / repair
 │   ├── package.json
 │   └── tsconfig.json
+├── recall-workspace/           # 证据回忆工作台源码（Vue 3 + TypeScript）
+│   ├── src/                    # Workspace.vue / repository.ts / main.ts / style.css
+│   ├── test/
+│   ├── vite.config.ts
+│   └── package.json
+├── docs/                       # 技术文档与作品介绍文档
 ├── deploy/
 │   ├── nginx.conf
 │   └── lumina.service
@@ -141,6 +148,12 @@ npm run typecheck
 npm test
 npm run build
 npm start
+
+# 证据回忆工作台（Vue 3 + TypeScript）
+cd ../recall-workspace
+npm ci --no-audit --no-fund
+npm test
+npm run build
 ```
 
 ## 五、API 契约
@@ -296,13 +309,13 @@ AI 请求体使用 Zod 校验，响应为结构化 JSON。服务端不保存请�
 
 - 已在 Ubuntu 24.04 + Node.js 22 LTS + PostgreSQL 16 + Nginx + systemd 上完成生产部署。
 - 已在服务器配置全站 HTTPS：Let's Encrypt 证书覆盖 `shiyulab.xyz` / `www`，有效期至 2027-02-16，Nginx 443 与 HTTP→HTTPS 跳转均已启用。
-- 域名 ICP 备案仍需生效：当前外部域名访问仍受阿里云拦截；备案通过后 HTTPS 域名可直接对外使用，在此之前可用公网 IP/Tailscale。
+- 域名 HTTPS 已可用：经公网实测 `https://shiyulab.xyz` 返回 200；80 端口 HTTP 仍被阿里云 ICP 拦截（403 Beaver），访问请使用 HTTPS。公网 IP/Tailscale 可作为备用入口。
 - 已验证：健康检查、DeepSeek 文字/读图接口、证据回忆工作台、双设备同步、冲突解决、恢复码、清除、浏览器端到端。
 - 已配置每日 `pg_dump` 备份。
 - 具体服务器地址、域名与密钥不写入仓库；部署时按第六节替换占位符。
 
 后续可选：
-- ICP 备案生效（HTTPS 已在服务器配置，Certbot 续期已具备）。
+- ICP 备案生效（主要影响 80 端口 HTTP 入口；HTTPS 已可用，Certbot 续期已具备）。
 - AI 接口的公网限流、评审 IP 白名单与模型消费上限。
 - 备份异地保存与恢复演练。
 - 将缩略图迁入 IndexedDB（前端拆分已完成）。

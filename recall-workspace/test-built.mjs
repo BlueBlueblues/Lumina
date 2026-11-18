@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { Window } from "happy-dom";
+const window = new Window();
+window.document.body.innerHTML = '<div id="evidenceWorkspace"></div>';
+window.eval(readFileSync(new URL("../frontend/recall-assets/workspace.js", import.meta.url), "utf8"));
+assert.ok(window.document.body.textContent.includes("查找并核对"));
+assert.ok(window.document.querySelector("textarea"));
+assert.equal(window.LuminaEvidence?.version, "0.1.0");
+console.log("Built bundle mounted in a browser-like DOM without Node globals.");
+await window.happyDOM.close();
