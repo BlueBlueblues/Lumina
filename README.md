@@ -7,7 +7,7 @@
 ## 团队信息
 
 - 团队名称：光影志
-- 团队成员：BlueBlueblues、taokenailong
+- 团队成员：BlueBlueblues、taokenailong、yeapower19
 - 代码仓库：https://github.com/BlueBlueblues/Lumina
 
 ---
@@ -53,32 +53,30 @@ Fastify + TypeScript
 ```
 lumina/
 ├── frontend/
-│   ├── index.html              # 前端交接包成品（单文件，样式/字体/示例图内嵌）
+│   ├── index.html              # 模块化前端入口（纸墨 UI）
+│   ├── assets/                 # 构建资源（JS / CSS / WebP / 字体）
+│   ├── recall-assets/          # 证据回忆工作台构建产物
 │   ├── README-frontend.txt     # 原前端说明
 │   ├── 接入说明.md              # 原前端后端契约
 │   └── src/
 │       ├── lumina-bridge.js    # localStorage ↔ IndexedDB / 云同步桥
 │       ├── config.js
-│       ├── koi_back.webp       # 原前端背景素材（参考）
-│       ├── koi_front.webp
-│       ├── koi_runtime.js
-│       ├── koi_style.css
-│       ├── providers/          # ai.provider.js / api-client.js
-│       ├── storage/            # indexeddb / memories / assets / outbox
+│       ├── providers/
+│       ├── storage/            # indexeddb / memories / assets / outbox / record-codec / records
 │       ├── sync/               # sync-engine / conflict / api
 │       └── recall/             # recall-engine.js
 ├── backend/
 │   ├── src/
 │   │   ├── server.ts
 │   │   ├── config.ts
-│   │   ├── routes/             # ai.routes.ts / lumina.routes.ts / sync.routes.ts
-│   │   ├── services/           # vision / writing / conversation / recall / lumina / sync
+│   │   ├── routes/             # ai / lumina / sync / evidence
+│   │   ├── services/           # AI / sync / evidence-agent / evidence-validation / grounded-writing
 │   │   ├── providers/          # deepseek.provider.ts
 │   │   ├── database/           # schema / connection / migrate
 │   │   ├── prompts/
 │   │   ├── schemas/
 │   │   └── lib/
-│   ├── test/
+│   ├── test/                   # schemas / tokens / evidence / repair
 │   ├── package.json
 │   └── tsconfig.json
 ├── deploy/
@@ -89,7 +87,7 @@ lumina/
 
 ### 前端交接包融合方式
 
-- 保留交接包的 `index.html` 成品 UI（6.3 MB 单文件，原样式、字体、示例图和动画都不动）。
+- 前端已升级为模块化构建：`index.html` + `assets/` + `recall-assets/`，保留原纸墨视觉；证据回忆工作台随构建产物部署。
 - 原 `Providers` 已切到 `mode: 'http'`，端点指向 `/api/lumina`；后端不可用或返回非 2xx 时自动回退到原来的本地规则，页面不会白屏。
 - 新增 `src/lumina-bridge.js`：
   - 把 localStorage 的 `lumina.records.v3` 镜像到 IndexedDB 的 `memories` 影子记录，并接入同步引擎；
@@ -98,11 +96,12 @@ lumina/
   - 页面运行期间的删除/清空会生成墓碑（`deletedAt`）并同步；
   - 从云端拉回的新记录会补进 localStorage，并刷新原 UI。
 - 原 UI 的照片只存 256px 缩略图；桥接层会在用户保存照片记录时把**原图**额外写入 IndexedDB，删除记录时一并清理。缩略图仍保留在 localStorage 供原 UI 即时渲染。
+- 证据回忆工作台：新增 `/api/recall/start` 与 `/api/recall/continue`，服务端只做决策与逐字校验，检索在浏览器本地执行；前端产物位于 `frontend/recall-assets/`。
 - 云同步入口：首页右上角 `⋯` → **云同步**；运行状态面板里也保留入口
 - `⋯` 菜单已改为用户语言：`备份到文件` / `从备份恢复`（不出现 JSON），并去掉 `载入示例`；备份含缩略图、不含原图；清空按同步状态提示（同步开启时明确会删除云端）
 - 记录 ID 继续使用原前端的 `r...` 形式；同步 API 接受 1–140 字符的文本 ID（不再要求 UUID）。如果之前已经用旧 schema 建过 PostgreSQL，需要重建 `memories.id` / `sync_events.memory_id` 为 `text`。
-- 已知限制：localStorage 约 5 MB 的上限仍在（主要是缩略图）；正式部署建议把 6.3 MB 单文件拆成 `index.html + app.css + app.js + assets/`，并把缩略图也迁到 IndexedDB。
-- 直接双击 `index.html` 仍可离线使用原 UI（ES module 桥接不会加载，AI 自动回退本地规则）；真实 AI 与云同步请通过 HTTP 打开（开发用 5173，生产用 Nginx 同域）。
+- 已知限制：localStorage 约 5 MB 的上限仍在（主要是缩略图）；前端已完成 `index.html + assets + recall-assets` 拆分，缩略图迁入 IndexedDB 仍待后续。
+- 前端已拆分，请通过 HTTP 访问（开发用 5173，生产用 Nginx 同域）；旧的 6.3 MB 单文件双击模式不再作为主路径。
 
 ## 四、快速开始
 
@@ -171,6 +170,15 @@ AI 请求体使用 Zod 校验，响应为结构化 JSON。服务端不保存请�
 | POST | `/api/lumina/photo/question` | 看图后追问一句，返回 `{question}` |
 
 前端在开发环境会自动把端点指向 `http://127.0.0.1:3000/api/lumina`；生产环境走同域 `/api/lumina`。后端未配置密钥或请求失败时，前端回退到交接包自带的本地规则。
+
+### 证据回忆 API（`/api/recall`）
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| POST | `/api/recall/start` | 创建内存态证据回忆会话，返回首轮工具调用决策 |
+| POST | `/api/recall/continue` | 回传浏览器本地工具结果，推进多轮阅读与逐字核验 |
+
+接口只持有会话与校验状态，不把本地日记全量上传；浏览器执行 `search_memories` / `get_memory`，服务端做模型决策与引用校验。
 
 ### 同步（Bearer 设备令牌）
 
@@ -275,23 +283,26 @@ AI 请求体使用 Zod 校验，响应为结构化 JSON。服务端不保存请�
 - PostgreSQL schema、连接池、迁移脚本
 - DeepSeek Provider（OpenAI SDK）、四类 AI 服务与路由、Zod 结构化输出、IP 限流
 - 前端交接包兼容层（`/api/lumina` 五个接口）与原 UI 的 HTTP/本地回退
+- 证据回忆工作台（`/api/recall/*`）与逐字引文核验、结构化歧义澄清
 - 同步空间、设备令牌、一次性配对码、恢复码、增量 push/pull、revision 冲突、墓碑、冲突解决、关闭/清除
-- 前端交接包 UI 已并入 `frontend/index.html`；localStorage ↔ IndexedDB ↔ 云同步桥、照片原图本地存储、云同步与冲突面板
+- 模块化前端（`index.html + assets + recall-assets`）；localStorage ↔ IndexedDB ↔ 云同步桥、照片原图本地存储、证据回忆工作台、云同步与冲突面板
 - Nginx 与 systemd 部署模板、单元测试
 
 真实 DeepSeek 文字与读图接口、PostgreSQL 迁移、双设备同步、冲突、恢复码、清除、浏览器端到端和生产部署均已完成验证。后续可选项见第九节。
 
-> 说明：前端交接包是 6.3 MB 单文件成品；本轮保留原 UI 不动，通过外部 `lumina-bridge.js` 接入框架。若后续要拆分文件或彻底移除 localStorage，只需替换原 UI 的存储层，不影响同步引擎和后端契约。
+> 说明：前端已从 6.3 MB 单文件升级为模块化构建；证据回忆工作台以 `recall-assets` 构建产物部署，主 UI 仍保留纸墨视觉。
 
 ## 九、部署验证与后续
 
 - 已在 Ubuntu 24.04 + Node.js 22 LTS + PostgreSQL 16 + Nginx + systemd 上完成生产部署。
-- 已验证：健康检查、DeepSeek 文字/读图接口、双设备同步、冲突解决、恢复码、清除、浏览器端到端。
+- 已在服务器配置全站 HTTPS：Let's Encrypt 证书覆盖 `shiyulab.xyz` / `www`，有效期至 2027-02-16，Nginx 443 与 HTTP→HTTPS 跳转均已启用。
+- 域名 ICP 备案仍需生效：当前外部域名访问仍受阿里云拦截；备案通过后 HTTPS 域名可直接对外使用，在此之前可用公网 IP/Tailscale。
+- 已验证：健康检查、DeepSeek 文字/读图接口、证据回忆工作台、双设备同步、冲突解决、恢复码、清除、浏览器端到端。
 - 已配置每日 `pg_dump` 备份。
 - 具体服务器地址、域名与密钥不写入仓库；部署时按第六节替换占位符。
 
 后续可选：
-- ICP 备案与 HTTPS（Certbot 已包含在部署步骤中）。
+- ICP 备案生效（HTTPS 已在服务器配置，Certbot 续期已具备）。
 - AI 接口的公网限流、评审 IP 白名单与模型消费上限。
 - 备份异地保存与恢复演练。
-- 将 6.3 MB 单文件拆分，并把缩略图迁入 IndexedDB。
+- 将缩略图迁入 IndexedDB（前端拆分已完成）。
