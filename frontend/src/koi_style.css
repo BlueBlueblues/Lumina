@@ -1,0 +1,171 @@
+﻿/* 閿﹂菠姹犲绾歌儗鏅紙涓ゅ眰锛氭按闈㈤敠椴?+ 鍓嶆櫙鐫¤幉绾歌竟锛?*/
+.koiScene{
+  position:fixed; inset:0; z-index:0; overflow:hidden; background:#0a2a2c;
+  pointer-events:none; opacity:0; visibility:hidden;
+  transition:opacity .9s cubic-bezier(.22,.61,.36,1), visibility 0s linear .9s;
+}
+.koiScene.on{
+  opacity:1; visibility:visible;
+  transition:opacity .9s cubic-bezier(.22,.61,.36,1), visibility 0s;
+}
+.koiBack{
+  position:absolute; inset:-5%;
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+  transform:translate3d(0,0,0); will-change:transform;
+}
+.koiFront{
+  position:absolute; inset:0; pointer-events:none;
+  transform:translate3d(0,0,0); will-change:transform;
+}
+.koiSway{
+  position:absolute; inset:-5%;
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+  transform-origin:50% 100%;
+  animation:koiSway 16s ease-in-out infinite alternate;
+  will-change:transform;
+}
+@keyframes koiSway{
+  from{transform:translateY(0) rotate(-0.16deg)}
+  to{transform:translateY(-3px) rotate(0.16deg)}
+}
+.koiRays{
+  position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(112deg, rgba(255,248,214,.20), transparent 26% 68%, rgba(255,248,214,.10));
+  mix-blend-mode:screen;
+  animation:koiRays 18s ease-in-out infinite alternate;
+}
+@keyframes koiRays{ from{opacity:.45} to{opacity:.95} }
+.koiFlies span{
+  position:absolute; width:3px; height:3px; border-radius:50%;
+  background:#fff6c0;
+  box-shadow:0 0 8px 3px rgba(255,246,160,.42);
+  opacity:0;
+  animation:koiFloat linear infinite;
+}
+@keyframes koiFloat{
+  0%{transform:translate3d(0,26px,0); opacity:0}
+  18%{opacity:.85}
+  70%{opacity:.55}
+  100%{transform:translate3d(-18px,-120px,0); opacity:0}
+}
+.koiVeil{
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(50% 42% at 16% 12%, rgba(247,242,231,.74), rgba(247,242,231,.12) 62%, transparent 80%),
+    linear-gradient(180deg, rgba(247,242,231,.12), rgba(247,242,231,.03) 40%, rgba(247,242,231,.10));
+}
+html.koi-live .scene,
+html.koi-live .winScene{display:none !important}
+
+html.koi-live #screen-record .entry{background-color:rgba(255,253,248,.48) !important}
+html.koi-live #screen-record .entry--text{background-color:rgba(255,253,248,.42) !important}
+
+@media (max-width:640px){
+  .koiVeil{
+    background:
+      radial-gradient(80% 36% at 18% 10%, rgba(247,242,231,.70), transparent 70%),
+      linear-gradient(180deg, rgba(247,242,231,.14), rgba(247,242,231,.05) 40%, rgba(247,242,231,.12));
+  }
+}
+@media (prefers-reduced-motion: reduce){
+  .koiSway,.koiRays,.koiFlies span{animation:none}
+  .koiFlies{display:none}
+}
+
+/* 锦鲤底图上的文字加深 */
+html.koi-live #screen-record .entry p{color:#3f5047}
+html.koi-live #screen-record .entry .hintLine{color:#46584e}
+html.koi-live #screen-record .entry .go{color:#2b5544}
+html.koi-live #screen-record .recordMain .date,
+html.koi-live #screen-record .recordMain .sub{color:#40524a}
+
+/* 回看/档案：文字直接压在水面上太花，加一层纸雾让锦鲤退后 */
+html.koi-live body[data-screen="review"] .koiVeil,
+html.koi-live body[data-screen="archive"] .koiVeil{
+  background:
+    radial-gradient(60% 50% at 18% 12%, rgba(247,242,231,.72), rgba(247,242,231,.24) 60%, rgba(247,242,231,.34)),
+    linear-gradient(180deg, rgba(247,242,231,.34), rgba(247,242,231,.20) 50%, rgba(247,242,231,.34));
+}
+
+
+/* ===== 最终字体方案 A：字号 +1 档、字体加深 ===== */
+html.koi-live body{
+  --ink:#1a2b24;
+  --ink-2:#26382f;
+  --muted:#3c4f45;
+  --dim:#485c51;
+  --green-deep:#173c2f;
+  --green:#26503f;
+}
+body[data-screen="record"] .recordMain h1,
+body[data-screen="review"] .reviewHead h1,
+body[data-screen="archive"] .archiveHead h1{
+  font-size:36px !important;
+  font-weight:600 !important;
+  letter-spacing:.01em !important;
+  color:#142e26 !important;
+}
+body[data-screen="review"] .sumLead{
+  font-size:36px !important;
+  font-weight:600 !important;
+  color:#142e26 !important;
+}
+body[data-screen="record"] .recordMain .sub{font-size:14px !important; color:#36483e !important}
+body[data-screen="record"] .entry{background-color:rgba(255,253,248,.60) !important}
+body[data-screen="record"] .entry--text{background-color:rgba(255,253,248,.54) !important}
+body[data-screen="record"] .entry h2{font-size:20px !important; font-weight:600 !important; color:#142e26 !important}
+body[data-screen="record"] .entry p{font-size:14px !important; line-height:1.75 !important; color:#2f4238 !important}
+body[data-screen="record"] .entry .go{font-size:13px !important; font-weight:500 !important; color:#1f4636 !important}
+body[data-screen="record"] .entry--text .hintLine{font-size:14px !important; color:#36483e !important; opacity:1 !important}
+body[data-screen="archive"] .riverHead h2{font-size:16px !important; font-weight:600 !important}
+body[data-screen="archive"] .archiveNote{font-size:14px !important}
+
+@media (max-width:640px){
+  body[data-screen="record"] .recordMain h1,
+  body[data-screen="review"] .reviewHead h1,
+  body[data-screen="archive"] .archiveHead h1,
+  body[data-screen="review"] .sumLead{font-size:26px !important}
+  body[data-screen="record"] .entry h2{font-size:18px !important}
+  body[data-screen="record"] .entry p{font-size:14px !important}
+}
+
+
+/* ==== 首页统一背景与底部留白（2026-11-13） ==== */
+html.koi-live .garden{display:none !important}
+html.koi-live #screen-home .overviewMain,
+html.koi-live #screen-record .recordMain,
+html.koi-live #screen-review .reviewMain,
+html.koi-live #screen-archive .archiveMain{
+  padding-bottom:clamp(20px, 8vh, 88px);
+}
+@media (max-height:820px) and (min-width:641px){
+  html.koi-live #screen-home .overviewMain,
+  html.koi-live #screen-record .recordMain,
+  html.koi-live #screen-review .reviewMain,
+  html.koi-live #screen-archive .archiveMain{padding-bottom:16px}
+  html.koi-live #screen-archive .archiveMain{padding-top:24px}
+  #screen-archive .archiveHead{padding-bottom:6px}
+  #archiveAnalysis .archiveGrid .panel{min-height:196px}
+  #archiveAnalysis .archiveNote{margin-top:8px; padding-top:6px; line-height:1.6}
+  #archiveAnalysis .contrastBox{margin-top:6px; padding-top:4px}
+}
+
+
+/* 首页日期/链接压在锦鲤上时保持可读 */
+html.koi-live #screen-home .overviewMain .date,
+html.koi-live #screen-home .overviewCta .link{
+  color:#40524a;
+  text-shadow:0 1px 2px rgba(255,253,248,.96), 0 1px 14px rgba(255,253,248,.82);
+}
+
+
+@media (max-height:770px) and (min-width:641px){
+  html.koi-live #screen-home .overviewMain{padding-top:30px; padding-bottom:12px}
+  html.koi-live #screen-record .recordMain{padding-top:26px; padding-bottom:12px}
+  html.koi-live #screen-review .reviewMain{padding-top:18px; padding-bottom:12px}
+  html.koi-live #screen-archive .archiveMain{padding-top:16px; padding-bottom:12px}
+  #screen-archive .archiveHead{padding-bottom:2px}
+  #archiveAnalysis .periodRow{margin-top:10px}
+  #archiveAnalysis .contrastBox{margin-top:2px; padding-top:2px}
+  #archiveAnalysis .archiveNote{margin-top:4px; padding-top:4px; line-height:1.45}
+}
