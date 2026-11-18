@@ -1,5 +1,5 @@
 const DB_NAME = "lumina";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -35,6 +35,8 @@ export function openDb() {
     request.onupgradeneeded = () => {
       const db = request.result;
 
+      if (!db.objectStoreNames.contains("records")) db.createObjectStore("records", { keyPath: "id" });
+
       if (!db.objectStoreNames.contains("memories")) {
         const store = db.createObjectStore("memories", { keyPath: "id" });
         store.createIndex("updatedAt", "updatedAt");
@@ -59,7 +61,8 @@ export function openDb() {
       }
     };
 
-    request.onsuccess = () => resolve(request.result);
+    request.onblocked = () => { reject(new Error("请关闭其他光影志旧页面后刷新，数据库升级尚未完成，原记录未改动。")); };
+    request.onsuccess = () => { request.result.onversionchange = () => { request.result.close(); dbPromise = null; }; resolve(request.result); };
     request.onerror = () => reject(request.error);
   });
 

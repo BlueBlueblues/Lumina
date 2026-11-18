@@ -1,0 +1,17 @@
+
+@media (min-width:641px){
+  html.koi-live #screen-review .reviewList{
+    max-height:calc(100vh - 495px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding-right:6px;
+    scrollbar-width:thin;
+  }
+  html.koi-live #screen-archive #archiveRecords .archiveTimeline{
+    max-height:calc(100vh - 354px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding-right:6px;
+    scrollbar-width:thin;
+  }
+}

@@ -1,0 +1,282 @@
+/* 閿﹂菠姹犲绾歌儗鏅紙涓ゅ眰锛氭按闈㈤敠椴?+ 鍓嶆櫙鐫¤幉绾歌竟锛?*/
+.koiScene{
+  position:fixed; inset:0; z-index:0; overflow:hidden; background:#0a2a2c;
+  pointer-events:none; opacity:0; visibility:hidden;
+  transition:opacity .9s cubic-bezier(.22,.61,.36,1), visibility 0s linear .9s;
+}
+.koiScene.on{
+  opacity:1; visibility:visible;
+  transition:opacity .9s cubic-bezier(.22,.61,.36,1), visibility 0s;
+}
+.koiBack{
+  position:absolute; inset:-5%;
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+  transform:translate3d(0,0,0); will-change:transform;
+}
+.koiFront{
+  position:absolute; inset:0; pointer-events:none;
+  transform:translate3d(0,0,0); will-change:transform;
+}
+.koiSway{
+  position:absolute; inset:-5%;
+  background-position:center; background-size:cover; background-repeat:no-repeat;
+  transform-origin:50% 100%;
+  animation:koiSway 16s ease-in-out infinite alternate;
+  will-change:transform;
+}
+@keyframes koiSway{
+  from{transform:translateY(0) rotate(-0.16deg)}
+  to{transform:translateY(-3px) rotate(0.16deg)}
+}
+.koiRays{
+  position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(112deg, rgba(255,248,214,.20), transparent 26% 68%, rgba(255,248,214,.10));
+  mix-blend-mode:screen;
+  animation:koiRays 18s ease-in-out infinite alternate;
+}
+@keyframes koiRays{ from{opacity:.45} to{opacity:.95} }
+.koiFlies span{
+  position:absolute; width:3px; height:3px; border-radius:50%;
+  background:#fff6c0;
+  box-shadow:0 0 8px 3px rgba(255,246,160,.42);
+  opacity:0;
+  animation:koiFloat linear infinite;
+}
+@keyframes koiFloat{
+  0%{transform:translate3d(0,26px,0); opacity:0}
+  18%{opacity:.85}
+  70%{opacity:.55}
+  100%{transform:translate3d(-18px,-120px,0); opacity:0}
+}
+.koiVeil{
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(50% 42% at 16% 12%, rgba(246,243,236,.74), rgba(246,243,236,.12) 62%, transparent 80%),
+    linear-gradient(180deg, rgba(246,243,236,.12), rgba(246,243,236,.03) 40%, rgba(246,243,236,.10));
+}
+html.koi-live .scene,
+html.koi-live .winScene{display:none !important}
+
+html.koi-live #screen-record .entry{background-color:rgba(253,252,249,.48) !important}
+html.koi-live #screen-record .entry--text{background-color:rgba(253,252,249,.42) !important}
+
+@media (max-width:640px){
+  .koiVeil{
+    background:
+      radial-gradient(80% 36% at 18% 10%, rgba(246,243,236,.70), transparent 70%),
+      linear-gradient(180deg, rgba(246,243,236,.14), rgba(246,243,236,.05) 40%, rgba(246,243,236,.12));
+  }
+}
+@media (prefers-reduced-motion: reduce){
+  .koiSway,.koiRays,.koiFlies span{animation:none}
+  .koiFlies{display:none}
+}
+
+/* 锦鲤底图上的文字加深 */
+html.koi-live #screen-record .entry p{color:#3c434e}
+html.koi-live #screen-record .entry .hintLine{color:#444b56}
+html.koi-live #screen-record .entry .go{color:#28313d}
+html.koi-live #screen-record .recordMain .date,
+html.koi-live #screen-record .recordMain .sub{color:#3d444f}
+
+/* 回看/档案：文字直接压在水面上太花，加一层纸雾让锦鲤退后 */
+html.koi-live body[data-screen="review"] .koiVeil,
+html.koi-live body[data-screen="archive"] .koiVeil{
+  background:
+    radial-gradient(60% 50% at 18% 12%, rgba(246,243,236,.72), rgba(246,243,236,.24) 60%, rgba(246,243,236,.34)),
+    linear-gradient(180deg, rgba(246,243,236,.34), rgba(246,243,236,.20) 50%, rgba(246,243,236,.34));
+}
+
+
+/* ===== 最终字体方案 A：字号 +1 档、字体加深 ===== */
+html.koi-live body{
+  --ink:#16191f;
+  --ink-2:#2e353f;
+  --muted:#454d59;
+  --dim:#4c5560;
+  --green-deep:#171b21;
+  --green:#2b3540;
+}
+body[data-screen="record"] .recordMain h1,
+body[data-screen="review"] .reviewHead h1,
+body[data-screen="archive"] .archiveHead h1{
+  font-size:27px !important;
+  font-weight:600 !important;
+  letter-spacing:.01em !important;
+  color:#171b21 !important;
+}
+body[data-screen="review"] .sumLead{
+  font-size:32px !important;
+  font-weight:600 !important;
+  line-height:1.45 !important;
+  color:#171b21 !important;
+}
+body[data-screen="record"] .recordMain .sub{font-size:14px !important; color:#333944 !important}
+body[data-screen="record"] .entry{background-color:rgba(253,252,249,.60) !important}
+body[data-screen="record"] .entry--text{background-color:rgba(253,252,249,.54) !important}
+body[data-screen="record"] .entry h2{font-size:20px !important; font-weight:600 !important; color:#171b21 !important}
+body[data-screen="record"] .entry p{font-size:14px !important; line-height:1.75 !important; color:#2c333c !important}
+body[data-screen="record"] .entry .go{font-size:13px !important; font-weight:500 !important; color:#1e242e !important}
+body[data-screen="record"] .entry--text .hintLine{font-size:14px !important; color:#333944 !important; opacity:1 !important}
+body[data-screen="archive"] .riverHead h2{font-size:16px !important; font-weight:600 !important}
+body[data-screen="archive"] .archiveNote{font-size:14px !important}
+
+@media (max-width:640px){
+  body[data-screen="record"] .recordMain h1,
+  body[data-screen="review"] .reviewHead h1,
+  body[data-screen="archive"] .archiveHead h1{font-size:21px !important}
+  body[data-screen="review"] .sumLead{font-size:24px !important}
+  body[data-screen="record"] .entry h2{font-size:18px !important}
+  body[data-screen="record"] .entry p{font-size:14px !important}
+}
+/* ==== 首页与记录 / 回看 / 档案统一背景与底部留白 ==== */
+html.koi-live .garden{display:none !important}
+html.koi-live #screen-home .overviewMain .date,
+html.koi-live #screen-home .overviewCta .link{
+  color:#3d444f;
+  text-shadow:0 1px 2px rgba(253,252,249,.96), 0 1px 14px rgba(253,252,249,.82);
+}
+html.koi-live #screen-home .overviewMain,
+html.koi-live #screen-record .recordMain,
+html.koi-live #screen-review .reviewMain,
+html.koi-live #screen-archive .archiveMain{
+  padding-bottom:clamp(20px, 8vh, 88px);
+}
+@media (max-height:820px) and (min-width:641px){
+  html.koi-live #screen-home .overviewMain,
+  html.koi-live #screen-record .recordMain,
+  html.koi-live #screen-review .reviewMain,
+  html.koi-live #screen-archive .archiveMain{padding-bottom:16px}
+  html.koi-live #screen-archive .archiveMain{padding-top:24px}
+  #screen-archive .archiveHead{padding-bottom:6px}
+  #archiveAnalysis .archiveGrid .panel{min-height:196px}
+  #archiveAnalysis .archiveNote{margin-top:8px; padding-top:6px; line-height:1.6}
+  #archiveAnalysis .contrastBox{margin-top:6px; padding-top:4px}
+}
+@media (max-height:770px) and (min-width:641px){
+  html.koi-live #screen-home .overviewMain{padding-top:30px; padding-bottom:12px}
+  html.koi-live #screen-record .recordMain{padding-top:26px; padding-bottom:12px}
+  html.koi-live #screen-review .reviewMain{padding-top:18px; padding-bottom:12px}
+  html.koi-live #screen-archive .archiveMain{padding-top:16px; padding-bottom:12px}
+  #screen-archive .archiveHead{padding-bottom:2px}
+  #archiveAnalysis .periodRow{margin-top:10px}
+  #archiveAnalysis .contrastBox{margin-top:2px; padding-top:2px}
+  #archiveAnalysis .archiveNote{margin-top:4px; padding-top:4px; line-height:1.45}
+}
+
+/* ============================================================
+   修复批次（2026-11-14）
+   1. 键盘焦点环：原先 .entry/.hrow/.rrow/.trow 都是 outline:none，
+      Tab 过去只剩一层 5% 的渐变，等于没有焦点指示。
+   2. 记录页两张入口卡的行动按钮对齐到底。
+   3. 移动端关闭按钮回到纸栏右上角（原来是绝对定位，单列后跑到弹窗中间）。
+   4. 回看/档案纸雾加厚，让正文从锦鲤和枫叶里退出来。
+   5. 小于 12px 的辅助文字统一抬一档。
+   ============================================================ */
+
+/* 1) 键盘焦点 */
+.entry:focus-visible,
+.tCard:focus-visible{
+  outline:2px solid rgba(43,53,64,.55) !important;
+  outline-offset:-2px;
+  border-radius:8px;
+}
+/* 列表行用内阴影，避免整行描边压到分隔线 */
+.rrow:focus-visible,
+.trow:focus-visible,
+.hrow:focus-visible{
+  outline:none !important;
+  box-shadow:inset 0 0 0 2px rgba(43,53,64,.45);
+  border-radius:6px;
+}
+
+/* 2) 入口卡行动按钮对齐 */
+#screen-record .entry--photo{padding-bottom:18px}
+#screen-record .entry--photo .body{display:flex; flex-direction:column; flex:1; min-height:0}
+#screen-record .entry--photo .body .go{margin-top:auto}
+
+/* 3) 移动端关闭按钮 */
+@media (max-width:760px){
+  .sheet2 .close{
+    position:static; float:right; margin:-10px -6px 0 10px;
+    width:34px; height:34px; font-size:22px;
+  }
+}
+
+/* 4) 纸雾加厚：回看是整屏文字压在水面上，雾再厚一点；
+      档案只有说明区在图上，改成给说明区加纸底，锦鲤就不必洗白 */
+html.koi-live body[data-screen="review"] .koiVeil{
+  background:
+    radial-gradient(60% 50% at 18% 12%, rgba(246,243,236,.84), rgba(246,243,236,.46) 60%, rgba(246,243,236,.56)),
+    linear-gradient(180deg, rgba(246,243,236,.56), rgba(246,243,236,.42) 50%, rgba(246,243,236,.56));
+}
+html.koi-live body[data-screen="archive"] .koiVeil{
+  background:
+    radial-gradient(60% 50% at 18% 12%, rgba(246,243,236,.76), rgba(246,243,236,.28) 60%, rgba(246,243,236,.38)),
+    linear-gradient(180deg, rgba(246,243,236,.38), rgba(246,243,236,.24) 50%, rgba(246,243,236,.38));
+}
+html.koi-live body[data-screen="archive"] #archiveAnalysis .contrastBox,
+html.koi-live body[data-screen="archive"] #archiveAnalysis .archiveNote{
+  border:1px solid rgba(26,29,34,.10);
+  border-radius:12px;
+  background:rgba(253,252,249,.78);
+  box-shadow:0 12px 30px rgba(26,29,34,.06);
+}
+html.koi-live body[data-screen="archive"] #archiveAnalysis .archiveNote{
+  margin-top:10px; padding:12px 18px 14px; border-top:1px solid rgba(26,29,34,.10);
+}
+html.koi-live body[data-screen="archive"] #archiveAnalysis .contrastBox{
+  margin-top:10px; padding:10px 16px 10px; border-top:1px solid rgba(26,29,34,.10);
+}
+
+/* 5) 记录页两张入口卡：纸墨风改成更实的纸，不再让锦鲤透上来 */
+html.koi-live #screen-record .entry,
+body[data-screen="record"] .entry{background-color:rgba(253,252,249,.87) !important}
+html.koi-live #screen-record .entry--text,
+body[data-screen="record"] .entry--text{background-color:rgba(253,252,249,.80) !important}
+
+/* 5) 小字号抬档 */
+.stepHead{font-size:10px; letter-spacing:.12em}
+.tTurn .tWho{font-size:10px}
+.tMoodRead{font-size:12px}
+.s2hint{font-size:11.5px}
+
+/* ============================================================
+   去 AI 味：视觉层（不动板块结构，只做排版与细节）
+   1. 周分布的柱子带数值，别再只是装饰。
+   2. 去掉卡片右上角 58px 的引号装饰。
+   3. 心情圆环改成四象限硬边分区，不是一团柔和渐变。
+   ============================================================ */
+
+/* 1) 柱子带数字 */
+.band .barWrap{height:96px; flex-direction:column; justify-content:flex-end; gap:4px}
+.band .barNum{font-size:9.5px; color:var(--dim); font-weight:600; line-height:1; font-variant-numeric:tabular-nums}
+.day .label{font-size:10px}
+
+/* 3) 去引号 */
+.entry--text::after{content:none}
+
+/* 4) 四象限硬边 */
+.ring{
+  background:
+    radial-gradient(circle at 50% 50%, #fdfcf9 0%, rgba(253,252,249,.86) 18%, rgba(253,252,249,.26) 46%, rgba(253,252,249,.08) 68%, transparent 78%),
+    conic-gradient(from 0deg,
+      #f4dcb8 0deg 90deg,
+      #c8e0d4 90deg 180deg,
+      #cbd6e0 180deg 270deg,
+      #eec6c3 270deg 360deg);
+}
+.ring:focus-visible,.line:focus-visible{outline:2px solid rgba(43,53,64,.55); outline-offset:6px}
+
+/* 只给读屏的标题 */
+.srOnly{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap; border:0}
+
+/* 全站纸纹：最上层盖 6% 的噪点，白卡和照片一起回到“印在纸上”的质感。
+   和封面 .winVeil::after 用的是同一套噪点；封面自己已有 4.5%，这里关掉，避免叠到 10%。 */
+body::after{
+  content:""; position:fixed; inset:0; z-index:9999; pointer-events:none;
+  opacity:.06; mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+body[data-screen="cover"]::after{opacity:0}

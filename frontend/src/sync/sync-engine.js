@@ -1,3 +1,4 @@
+import { normalizeOriginal } from "../storage/record-codec.js";
 import { kvDelete, kvGet, kvSet } from "../storage/indexeddb.js";
 import {
   applyRemoteMemory,
@@ -195,7 +196,10 @@ async function pushAll(token) {
     if (!memory.deviceId) {
       memory = { ...memory, deviceId: await getDeviceId() };
     }
-    sent.push({ item, memory });
+    const bytes = new TextEncoder().encode(JSON.stringify(toSyncPayload(memory))).length;
+    const currentBytes = sent.reduce((sum, entry) => sum + entry.bytes, 0);
+    if (sent.length && currentBytes + bytes > 8 * 1024 * 1024) break;
+    sent.push({ item, memory, bytes });
     await markSending(item.seq);
   }
 
@@ -303,6 +307,7 @@ export async function resolveConflictWithServer(memoryId, strategy, merged = nul
     tags: source.tags ?? [],
     aiFacts: source.aiFacts ?? [],
     ...(source.supplement ? { supplement: source.supplement } : {}),
+    ...(source.original !== undefined ? { original: source.original } : {}),
     hasPhoto: Boolean(source.hasPhoto),
     deletedAt: source.deletedAt ?? null,
   };
@@ -331,6 +336,7 @@ function toSyncPayload(memory) {
     tags: memory.tags ?? [],
     aiFacts: memory.aiFacts ?? [],
     ...(memory.supplement ? { supplement: memory.supplement } : {}),
+    ...(memory.original !== undefined ? { original: memory.original } : {}),
     hasPhoto: Boolean(memory.hasPhoto),
     createdAt: memory.createdAt,
     updatedAt: memory.updatedAt,
@@ -349,6 +355,7 @@ function normalizeContent(memory) {
     tags: memory.tags ?? [],
     aiFacts: memory.aiFacts ?? [],
     supplement: memory.supplement ?? null,
+    original: normalizeOriginal(memory.original),
     hasPhoto: Boolean(memory.hasPhoto),
     deletedAt: memory.deletedAt ?? null,
   });

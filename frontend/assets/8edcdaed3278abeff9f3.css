@@ -1,0 +1,10 @@
+
+.menuRule{height:1px;background:var(--line-2);margin:5px 8px;flex:none}
+.menuNote{font-size:9px;color:var(--dim);padding:0 12px 6px;letter-spacing:.03em;line-height:1.6}
+.menu button.menuDanger{color:var(--terra)}
+.menu button.menuDanger:hover{background:rgba(156,91,70,.08);color:#7d4635}
+.menuState{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--dim);margin-left:8px;vertical-align:1px}
+.menuState.on{background:var(--green)}
+.menuState.alert{background:var(--terra);box-shadow:0 0 0 3px rgba(156,91,70,.1)}
+#menuSync{display:flex;align-items:center}
+#menuSync .menuState{margin-left:auto}

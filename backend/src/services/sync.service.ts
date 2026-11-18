@@ -33,6 +33,7 @@ interface MemoryRow {
   tags: string[] | null;
   ai_facts: unknown;
   supplement: string | null;
+  original: MemorySync["original"];
   has_photo: boolean;
   created_at: Date | string;
   updated_at: Date | string;
@@ -91,6 +92,7 @@ interface WriteContent {
   tags: string[];
   aiFacts: string[];
   supplement: string | null;
+  original?: MemorySync["original"];
   hasPhoto: boolean;
 }
 
@@ -102,6 +104,7 @@ const EMPTY_CONTENT: WriteContent = {
   tags: [],
   aiFacts: [],
   supplement: null,
+  original: null,
   hasPhoto: false,
 };
 
@@ -121,6 +124,7 @@ function serializeMemory(row: MemoryRow): MemorySync {
       ? row.ai_facts.filter((value): value is string => typeof value === "string")
       : [],
     ...(row.supplement ? { supplement: row.supplement } : {}),
+    ...(row.original !== undefined ? { original: row.original } : {}),
     hasPhoto: row.has_photo,
     createdAt: toMillis(row.created_at),
     updatedAt: toMillis(row.updated_at),
@@ -140,6 +144,7 @@ function toWriteContent(memory: MemorySync, isDelete: boolean): WriteContent {
     tags: memory.tags,
     aiFacts: memory.aiFacts,
     supplement: memory.supplement ?? null,
+    original: memory.original,
     hasPhoto: memory.hasPhoto,
   };
 }
@@ -426,11 +431,11 @@ export async function pushChanges(
         const inserted = await client.query<MemoryRow>(
           `INSERT INTO memories (
              vault_id, id, title, content, record_date, mood, tags, ai_facts,
-             supplement, has_photo, created_at, updated_at, revision, device_id, deleted_at
+             supplement, has_photo, created_at, updated_at, revision, device_id, deleted_at, original
            )
            VALUES (
              $1, $2, $3, $4, $5, $6, $7, $8::jsonb,
-             $9, $10, $11, $12, 1, $13, $14
+             $9, $10, $11, $12, 1, $13, $14, $15::jsonb
            )
            RETURNING *`,
           [
@@ -448,6 +453,7 @@ export async function pushChanges(
             new Date(memory.updatedAt),
             auth.deviceId,
             isDelete ? new Date(deletedAtMs) : null,
+            JSON.stringify(content.original ?? null),
           ],
         );
         const row = inserted.rows[0];
@@ -478,7 +484,8 @@ export async function pushChanges(
              updated_at = $11,
              revision = revision + 1,
              device_id = $12,
-             deleted_at = $13
+             deleted_at = $13,
+             original = CASE WHEN $14 THEN $15::jsonb ELSE original END
          WHERE vault_id = $1 AND id = $2
          RETURNING *`,
         [
@@ -495,6 +502,8 @@ export async function pushChanges(
           new Date(memory.updatedAt),
           auth.deviceId,
           isDelete ? new Date(deletedAtMs) : null,
+          isDelete || memory.original !== undefined,
+          JSON.stringify(content.original ?? null),
         ],
       );
       const row = updated.rows[0];
@@ -624,7 +633,8 @@ export async function resolveConflict(
            updated_at = now(),
            revision = revision + 1,
            device_id = $11,
-           deleted_at = $12
+           deleted_at = $12,
+           original = CASE WHEN $13 THEN $14::jsonb ELSE original END
        WHERE vault_id = $1 AND id = $2
        RETURNING *`,
       [
@@ -640,6 +650,8 @@ export async function resolveConflict(
         content.hasPhoto,
         auth.deviceId,
         deletedAtMs !== null ? new Date(deletedAtMs) : null,
+        deletedAtMs !== null || input.memory.original !== undefined,
+        JSON.stringify(content.original ?? null),
       ],
     );
     const row = updated.rows[0];

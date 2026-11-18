@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
 import { z, type ZodTypeAny } from "zod";
 import { config } from "../config.js";
 import { AppError, ServiceUnavailableError } from "../lib/errors.js";
@@ -85,6 +85,31 @@ export class DeepSeekProvider {
       content: message.content,
     })) as ChatCompletionMessageParam[];
     return this.complete(sdkMessages, options);
+  }
+
+  async *streamText(messages: TextMessage[], options: CompletionOptions = {}, signal?: AbortSignal) {
+    const stream = await this.requireClient().chat.completions.create({
+      model: options.model ?? config.DEEPSEEK_CHAT_MODEL,
+      messages: messages as ChatCompletionMessageParam[], temperature: options.temperature ?? 0,
+      max_tokens: options.maxTokens ?? 500, response_format: {type:"json_object"}, stream: true,
+    }, {signal});
+    try { for await (const chunk of stream) { const text=chunk.choices[0]?.delta?.content; if(text) yield text; } }
+    finally { stream.controller.abort(); }
+  }
+
+  async toolTurn(messages: ChatCompletionMessageParam[], tools: ChatCompletionTool[], choice: "auto" | "required") {
+    try {
+      const result = await this.requireClient().chat.completions.create({
+        model: config.DEEPSEEK_CHAT_MODEL, messages, tools, tool_choice: choice,
+        temperature: 0, max_tokens: 1_500,
+      });
+      const message = result.choices[0]?.message;
+      if (!message) throw new Error("Empty tool response");
+      return message;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError(502, "tool_provider_error", "模型工具调用失败，请稍后重试。");
+    }
   }
 
   async json<S extends ZodTypeAny>(

@@ -23,6 +23,7 @@ export async function emptyMemory(deviceId = null) {
     tags: [],
     aiFacts: [],
     supplement: null,
+    original: null,
     hasPhoto: false,
     createdAt: now,
     updatedAt: now,
@@ -70,6 +71,7 @@ export async function saveMemory(input) {
       input.supplement !== undefined
         ? input.supplement || null
         : existing?.supplement ?? null,
+    original: input.original !== undefined ? input.original : existing?.original ?? null,
     hasPhoto:
       input.hasPhoto !== undefined
         ? Boolean(input.hasPhoto)
@@ -100,12 +102,14 @@ export async function markMemoryDeleted(id) {
     tags: [],
     aiFacts: [],
     supplement: null,
+    original: null,
     hasPhoto: false,
     deletedAt: Date.now(),
   });
 }
 
 export async function applyRemoteMemory(remote) {
+  const existing = await getMemory(remote.id);
   const record = {
     id: remote.id,
     title: remote.title ?? "",
@@ -115,6 +119,7 @@ export async function applyRemoteMemory(remote) {
     tags: Array.isArray(remote.tags) ? remote.tags : [],
     aiFacts: Array.isArray(remote.aiFacts) ? remote.aiFacts : [],
     supplement: remote.supplement ?? null,
+    original: remote.original !== undefined ? remote.original : existing?.original ?? null,
     hasPhoto: Boolean(remote.hasPhoto),
     createdAt: remote.createdAt,
     updatedAt: remote.updatedAt,

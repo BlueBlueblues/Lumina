@@ -1,0 +1,59 @@
+
+/* 旧版那种“切页后板块依次出现”的层次动效 */
+@keyframes blockIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.screen:not([hidden]) .overviewGrid > .panel,
+.screen:not([hidden]) .entries > .entry,
+.screen:not([hidden]) .recentRows > *,
+.screen:not([hidden]) .reviewSummary,
+.screen:not([hidden]) .reviewList > *,
+.screen:not([hidden]) .chatWrap > *,
+.screen:not([hidden]) .archiveGrid > .panel,
+.screen:not([hidden]) .riverHead,
+.screen:not([hidden]) .river,
+.screen:not([hidden]) .archiveNote,
+.screen:not([hidden]) .archiveTimeline > *,
+.screen:not([hidden]) .overviewCta{animation:blockIn .55s var(--ease) both}
+.screen:not([hidden]) .overviewGrid > .panel:nth-child(2),
+.screen:not([hidden]) .entries > .entry:nth-child(2),
+.screen:not([hidden]) .chatWrap > *:nth-child(2),
+.screen:not([hidden]) .archiveGrid > .panel:nth-child(2){animation-delay:.09s}
+.screen:not([hidden]) .recentRows > *:nth-child(2),
+.screen:not([hidden]) .reviewList > *:nth-child(2),
+.screen:not([hidden]) .archiveTimeline > *:nth-child(2){animation-delay:.05s}
+.screen:not([hidden]) .recentRows > *:nth-child(3),
+.screen:not([hidden]) .reviewList > *:nth-child(3),
+.screen:not([hidden]) .archiveTimeline > *:nth-child(3){animation-delay:.1s}
+.screen:not([hidden]) .recentRows > *:nth-child(4),
+.screen:not([hidden]) .reviewList > *:nth-child(4),
+.screen:not([hidden]) .archiveTimeline > *:nth-child(4){animation-delay:.15s}
+.screen:not([hidden]) .riverHead{animation-delay:.02s}
+.screen:not([hidden]) .reviewSummary{animation-delay:.02s}
+.screen:not([hidden]) .river{animation-delay:.08s}
+.screen:not([hidden]) .archiveNote{animation-delay:.14s}
+.screen:not([hidden]) .overviewCta{animation-delay:.16s}
+@media (prefers-reduced-motion:reduce){
+  .screen:not([hidden]) .overviewGrid > .panel,
+  .screen:not([hidden]) .entries > .entry,
+  .screen:not([hidden]) .recentRows > *,
+  .screen:not([hidden]) .reviewSummary,
+  .screen:not([hidden]) .reviewList > *,
+  .screen:not([hidden]) .chatWrap > *,
+  .screen:not([hidden]) .archiveGrid > .panel,
+  .screen:not([hidden]) .riverHead,
+  .screen:not([hidden]) .river,
+  .screen:not([hidden]) .archiveNote,
+  .screen:not([hidden]) .archiveTimeline > *,
+  .screen:not([hidden]) .overviewCta{animation:none !important}
+}
+body.no-motion .screen .overviewGrid > .panel,
+body.no-motion .screen .entries > .entry,
+body.no-motion .screen .recentRows > *,
+body.no-motion .screen .reviewSummary,
+body.no-motion .screen .reviewList > *,
+body.no-motion .screen .chatWrap > *,
+body.no-motion .screen .archiveGrid > .panel,
+body.no-motion .screen .riverHead,
+body.no-motion .screen .river,
+body.no-motion .screen .archiveNote,
+body.no-motion .screen .archiveTimeline > *,
+body.no-motion .screen .overviewCta{animation:none !important}

@@ -1,0 +1,5 @@
+@font-face{font-family:"Lumina Serif";src:url(/assets/463668fb3f3a37bb3b62.woff2) format("woff2");font-weight:200 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Lumina Sans";src:url(/assets/ff46c740a4c47bc68f67.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Lumina Sans";src:url(/assets/cbf0af60ec2aac815742.woff2) format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Lumina Sans";src:url(/assets/a7effa131fc518543e70.woff2) format("woff2");font-weight:700;font-style:normal;font-display:swap}
+:root{--serif:"Lumina Serif","Noto Serif SC","Source Han Serif SC","Songti SC",STSong,SimSun,serif;--sans:"Lumina Sans","HarmonyOS Sans SC",MiSans,"PingFang SC","Microsoft YaHei",DengXian,-apple-system,"Segoe UI",sans-serif}

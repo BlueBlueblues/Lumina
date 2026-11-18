@@ -8,6 +8,7 @@ import { deepSeek } from "./providers/deepseek.provider.js";
 import { aiRoutes } from "./routes/ai.routes.js";
 import { luminaRoutes } from "./routes/lumina.routes.js";
 import { syncRoutes } from "./routes/sync.routes.js";
+import { evidenceRoutes } from "./routes/evidence.routes.js";
 
 const app = Fastify({
   logger: {
@@ -76,6 +77,7 @@ app.get("/api/health", async () => ({
 await app.register(aiRoutes, { prefix: "/api/ai" });
 await app.register(luminaRoutes, { prefix: "/api/lumina" });
 await app.register(syncRoutes, { prefix: "/api/sync" });
+await app.register(evidenceRoutes, { prefix: "/api/recall" });
 
 app.addHook("onClose", async () => {
   await closePool();

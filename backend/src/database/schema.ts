@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS memories (
 
 CREATE INDEX IF NOT EXISTS idx_memories_vault_updated ON memories (vault_id, updated_at DESC);
 
+ALTER TABLE memories ADD COLUMN IF NOT EXISTS original jsonb;
+
 CREATE TABLE IF NOT EXISTS sync_events (
   id bigserial PRIMARY KEY,
   vault_id uuid NOT NULL REFERENCES sync_vaults(id) ON DELETE CASCADE,

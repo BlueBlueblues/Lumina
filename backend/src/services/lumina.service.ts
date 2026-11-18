@@ -1,3 +1,5 @@
+import { config } from "../config.js";
+import { sentenceSources, selectGroundedText, type Sentence } from "./grounded-writing.js";
 import {
   LUMINA_OBSERVE_PROMPT,
   LUMINA_PHOTO_QUESTION_PROMPT,
@@ -30,64 +32,27 @@ export async function observeLuminaPhoto(input: LuminaObserveRequest) {
     userPrompt,
     input.image,
     luminaFactsResultSchema,
-    { maxTokens: 900 },
+    { maxTokens: 900, model: config.DEEPSEEK_VISION_MODEL },
   );
 }
 
 export async function writeLuminaText(input: LuminaWriteRequest) {
-  const payload = {
-    facts: input.facts,
-    mood: input.mood ?? null,
-    note: input.note,
-    extra: input.extra,
-    stage: input.stage,
-    variant: input.variant,
-  };
-
-  return deepSeek.json(
-    [
-      { role: "system", content: LUMINA_WRITE_PROMPT },
-      { role: "user", content: JSON.stringify(payload) },
-    ],
-    luminaTextResultSchema,
-    { maxTokens: 800 },
-  );
+  const user=sentenceSources([input.note ?? "",input.extra ?? ""]);
+  const observations=[input.facts.scene ? `照片分析（尚待用户核对）：${input.facts.scene}。` : "",input.facts.light ? `光线分析：${input.facts.light}。` : "",input.facts.subjects?.length ? `画面主体分析：${input.facts.subjects.join("、")}。` : ""];
+  const extra=sentenceSources(observations,"observation");
+  const mood=input.mood?.label ? [{id:"",text:`心情标注：${input.mood.label}。`,kind:"mood" as const}] : [];
+  const sources: Sentence[]=[...user,...extra,...mood].map((item,i)=>({...item,id:`s${i}`}));
+  return selectGroundedText(sources,input.variant);
 }
 
 export async function replyLuminaText(input: LuminaTextReplyRequest) {
-  return deepSeek.json(
-    [
-      { role: "system", content: LUMINA_TEXT_REPLY_PROMPT },
-      {
-        role: "user",
-        content: JSON.stringify({
-          turns: input.turns,
-          mood: input.mood ?? null,
-        }),
-      },
-    ],
-    luminaReplyResultSchema,
-    { maxTokens: 500 },
-  );
+  const last=[...input.turns].reverse().find(t=>t.role==="me")?.text ?? "";
+  const selected=await selectGroundedText(sentenceSources([last]));
+  return {reply:`你写下的是：${selected.text}`,question:input.turns.some(t=>t.role==="it") ? "" : "这一刻，你还想补充哪一点？"};
 }
 
-export async function integrateLuminaText(
-  input: LuminaTextIntegrateRequest,
-) {
-  return deepSeek.json(
-    [
-      { role: "system", content: LUMINA_TEXT_INTEGRATE_PROMPT },
-      {
-        role: "user",
-        content: JSON.stringify({
-          turns: input.turns,
-          mood: input.mood ?? null,
-        }),
-      },
-    ],
-    luminaTextResultSchema,
-    { maxTokens: 700 },
-  );
+export async function integrateLuminaText(input: LuminaTextIntegrateRequest) {
+  return selectGroundedText(sentenceSources(input.turns.filter(t=>t.role==="me").map(t=>t.text)));
 }
 
 export async function questionLuminaPhoto(
