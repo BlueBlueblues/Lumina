@@ -1,0 +1,200 @@
+#koiInteractive {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+#koiInteractive[hidden] { display: none; }
+
+.koiHomeHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  min-height: 94px;
+}
+
+/* ── 四个心情切换栏：强化选中态与各心情视觉区分度 ── */
+#koiMoodBar {
+  display: flex;
+  gap: 5px;
+  padding: 4px;
+  border-radius: 26px;
+  background: rgba(244, 239, 228, .88);
+  border: 1px solid rgba(255, 255, 255, .65);
+  box-shadow: 0 4px 18px rgba(14, 44, 38, .16), inset 0 1px 0 rgba(255, 255, 255, .7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#koiMoodBar button {
+  position: relative;
+  min-height: 39px;
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: rgba(34, 62, 53, .74);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background .28s cubic-bezier(.22, .61, .36, 1),
+    color .28s ease,
+    border-color .28s ease,
+    box-shadow .28s ease,
+    transform .22s ease,
+    opacity .22s ease;
+}
+
+#koiMoodBar button span {
+  display: inline-block;
+  font-size: 16px;
+  vertical-align: -1px;
+  margin-right: 2px;
+  transition: transform .28s cubic-bezier(.22, .61, .36, 1);
+}
+
+#koiMoodBar button:hover,
+#koiMoodBar button:focus-visible {
+  background: rgba(255, 253, 246, .68);
+  color: #1c3930;
+}
+
+#koiMoodBar button[aria-pressed="true"] {
+  font-weight: 700;
+  transform: translateY(-1px);
+}
+
+#koiMoodBar button[aria-pressed="true"] span {
+  transform: scale(1.16);
+}
+
+/* 愉快：暖金晴光 */
+#koiMoodBar button[data-mood="happy"][aria-pressed="true"] {
+  background: linear-gradient(135deg, #fffdf4 0%, #ffe8a3 100%);
+  border-color: #d8961c;
+  color: #5a3800;
+  box-shadow: 0 3px 12px rgba(216, 150, 28, .34), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+/* 平静：翠玉柔光 */
+#koiMoodBar button[data-mood="calm"][aria-pressed="true"] {
+  background: linear-gradient(135deg, #ffffff 0%, #dff2ea 100%);
+  border-color: #2f7a63;
+  color: #123c2f;
+  box-shadow: 0 3px 12px rgba(47, 122, 99, .28), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+/* 稍低落：烟雨微凉 */
+#koiMoodBar button[data-mood="low"][aria-pressed="true"] {
+  background: linear-gradient(135deg, #f4faff 0%, #cde4f5 100%);
+  border-color: #3f789e;
+  color: #153b54;
+  box-shadow: 0 3px 12px rgba(63, 120, 158, .30), inset 0 1px 0 rgba(255, 255, 255, .85);
+}
+
+/* 很低落：深沉密雨 */
+#koiMoodBar button[data-mood="sad"][aria-pressed="true"] {
+  background: linear-gradient(135deg, #27445a 0%, #172b3b 100%);
+  border-color: #8ab4d0;
+  color: #f4f9fd;
+  box-shadow: 0 4px 14px rgba(15, 34, 48, .42), inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+
+/* ── 池景四态整体氛围联动（平滑过渡，显著拉开四档视觉差异） ── */
+body[data-screen="home"] #koiBack {
+  background-image: url("/assets/52072ecacfb54f79a84e.webp") !important;
+  transition: filter 1s cubic-bezier(.22, .61, .36, 1);
+}
+body[data-screen="home"] #koiSway {
+  transition: filter 1s cubic-bezier(.22, .61, .36, 1);
+}
+body[data-screen="home"] .koiVeil,
+body[data-screen="home"] .koiRays,
+body[data-screen="home"] .koiFlies {
+  transition: opacity 1s ease, background 1s ease;
+}
+
+/* 1. 愉快：晴朗暖阳，左上角金色光晕与斜射暖光穿透荷叶照进池面 */
+body[data-screen="home"] #koiScene[data-weather="happy"] #koiBack,
+body[data-screen="home"] #koiScene[data-weather="happy"] #koiSway {
+  filter: brightness(1.12) saturate(1.20) sepia(.09);
+}
+body[data-screen="home"] #koiScene[data-weather="happy"] .koiVeil {
+  background:
+    radial-gradient(62% 52% at 8% 6%, rgba(255, 226, 126, .66), rgba(255, 204, 92, .26) 52%, transparent 82%),
+    linear-gradient(124deg, rgba(255, 236, 160, .42) 0%, rgba(255, 218, 116, .18) 32%, transparent 64%);
+}
+body[data-screen="home"] #koiScene[data-weather="happy"] .koiRays {
+  opacity: 1 !important;
+}
+
+/* 2. 平静：柔和清透的默认翠色池景 */
+body[data-screen="home"] #koiScene[data-weather="calm"] #koiBack,
+body[data-screen="home"] #koiScene[data-weather="calm"] #koiSway {
+  filter: brightness(1) saturate(1);
+}
+body[data-screen="home"] #koiScene[data-weather="calm"] .koiVeil {
+  background:
+    radial-gradient(45% 35% at 15% 11%, rgba(247, 242, 231, .36), rgba(247, 242, 231, .06) 58%, transparent 76%),
+    linear-gradient(180deg, rgba(247, 242, 231, .06), rgba(247, 242, 231, .02) 40%, rgba(247, 242, 231, .06));
+}
+
+/* 3. 稍低落：微凉烟雨，池色转冷青，薄雾笼罩 */
+body[data-screen="home"] #koiScene[data-weather="low"] #koiBack,
+body[data-screen="home"] #koiScene[data-weather="low"] #koiSway {
+  filter: brightness(.85) saturate(.80) hue-rotate(10deg);
+}
+body[data-screen="home"] #koiScene[data-weather="low"] .koiVeil {
+  background:
+    radial-gradient(54% 44% at 16% 12%, rgba(196, 222, 236, .34), rgba(140, 182, 204, .14) 62%, transparent 84%),
+    linear-gradient(180deg, rgba(22, 54, 74, .22), rgba(18, 46, 64, .12) 48%, rgba(14, 38, 54, .22));
+}
+body[data-screen="home"] #koiScene[data-weather="low"] .koiRays,
+body[data-screen="home"] #koiScene[data-weather="low"] .koiFlies {
+  opacity: .12 !important;
+}
+
+/* 4. 很低落：深沉暮雨，池景明显压暗为深青黛蓝色 */
+body[data-screen="home"] #koiScene[data-weather="sad"] #koiBack,
+body[data-screen="home"] #koiScene[data-weather="sad"] #koiSway {
+  filter: brightness(.65) saturate(.68) contrast(1.08) hue-rotate(18deg);
+}
+body[data-screen="home"] #koiScene[data-weather="sad"] .koiVeil {
+  background:
+    radial-gradient(64% 54% at 18% 12%, rgba(132, 168, 192, .22), rgba(16, 40, 58, .32) 60%, rgba(8, 22, 36, .46)),
+    linear-gradient(180deg, rgba(10, 28, 44, .44), rgba(8, 24, 38, .30) 50%, rgba(6, 18, 30, .48));
+}
+body[data-screen="home"] #koiScene[data-weather="sad"] .koiRays,
+body[data-screen="home"] #koiScene[data-weather="sad"] .koiFlies {
+  opacity: 0 !important;
+}
+
+/* 雨天（稍低落/很低落）下首页日期与底部辅助链接自动切换为浅色高对比文字 */
+body[data-screen="home"] #koiScene[data-weather="low"] ~ #screen-home .overviewMain .date,
+body[data-screen="home"] #koiScene[data-weather="low"] ~ #screen-home .overviewCta .link,
+body[data-screen="home"] #koiScene[data-weather="sad"] ~ #screen-home .overviewMain .date,
+body[data-screen="home"] #koiScene[data-weather="sad"] ~ #screen-home .overviewCta .link {
+  color: rgba(242, 248, 252, .92) !important;
+  text-shadow: 0 1px 3px rgba(8, 24, 38, .75), 0 2px 10px rgba(8, 24, 38, .55) !important;
+}
+body[data-screen="home"] .overviewMain .date,
+body[data-screen="home"] .overviewCta .link {
+  transition: color .8s ease, text-shadow .8s ease;
+}
+
+@media (min-width: 641px) {
+  #screen-home .overviewGrid .panel {
+    min-height: clamp(270px, calc(100svh - 320px), 470px);
+  }
+}
+@media (max-width: 640px) {
+  .koiHomeHeader { min-height: 120px; flex-direction: column; justify-content: flex-start; }
+  #koiMoodBar button { min-height: 44px; padding-inline: 10px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .koiHomeHeader { min-height: 74px; }
+}
