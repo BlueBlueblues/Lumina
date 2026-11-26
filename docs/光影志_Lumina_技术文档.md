@@ -215,7 +215,7 @@ flowchart TB
 
 前端工程兼顾了“单文件离线分发”与“现代模块化扩展”两种形态，核心由三部分组成：
 
-1. **成品主站（`frontend/index.html`）**：内嵌完整“纸墨”设计系统（炭黑与灰蓝墨主色、6% 全局噪点纸纹、华文行楷「光影志」三字 1,972 字节 TTF 子集字体 `Lumina Brush`、思源宋体与鸿蒙黑体子集），包含封面、概览、记录、回看、档案五大视图及本地回退规则。
+1. **成品主站（`frontend/index.html`）**：内嵌完整“纸墨”设计系统（炭黑与灰蓝墨主色、6% 全局噪点纸纹、集自台北故宫藏宋拓《怀仁集王羲之圣教序》故帖 000013 的暖墨「光影志」集字题记与朱砂小印、思源宋体与鸿蒙黑体开源/免费商用子集），包含封面、概览、记录、回看、档案五大视图及本地回退规则。
 2. **双层存储与云同步桥（`frontend/src/`）**：包含 `lumina-bridge.js`、`storage/`（`indexeddb.js`、`memories.js`、`assets.js`、`outbox.js`）与 `sync/`（`sync-engine.js`、`conflict.js`、`api.js`）。桥接层监听主站 `lumina.records.v3` 变更并异步镜像至 IndexedDB，同时接管原图捕获、30 秒定时增量同步、网络恢复自动重连与冲突解决弹窗。
 3. **证据回忆工作台（`recall-workspace/`）**：独立使用 Vue 3 + TypeScript 编写，构建产物输出至 `frontend/recall-assets/` 并挂载于回看页 `#evidenceWorkspace` 容器。构建脚本末尾内置 `test-built.mjs`，在打包阶段执行真实 DOM 挂载冒烟检查，防止构建产物因引用 Node 全局变量而在浏览器端崩溃。
 

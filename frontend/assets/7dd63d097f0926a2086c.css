@@ -30,34 +30,31 @@ body::after{content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
 button{font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer}
 .screen{position:relative; z-index:1; min-height:100vh}
 .screen[hidden]{display:none !important}
-.screen--cover{height:100vh; min-height:620px; overflow:hidden; background:#f6f2e8}
-.coverVideo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:58% 50%; pointer-events:none}
+.screen--cover{height:100vh; min-height:620px; overflow:hidden; background:#f4efe6}
+.coverVideo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 50%; pointer-events:none}
 .coverVeil{position:absolute; inset:0; z-index:2; pointer-events:none; background:
-  radial-gradient(58% 46% at 50% 44%, rgba(246,243,236,.58), rgba(246,243,236,.12) 62%, transparent 80%),
-  linear-gradient(180deg, rgba(246,243,236,.10), rgba(246,243,236,.18) 55%, rgba(246,243,236,.36))}
-.coverInner{position:relative; z-index:3; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 24px 46px; opacity:0; transform:translateY(12px); transition:opacity 1.1s var(--ease), transform 1.1s var(--ease); isolation:isolate}
-.coverInner::before{content:""; position:absolute; z-index:-1; width:68vmin; height:34vmin; border-radius:50%; background:radial-gradient(closest-side, rgba(246,243,236,.66), rgba(246,243,236,.16) 58%, transparent 78%); filter:blur(26px); pointer-events:none}
+  radial-gradient(35% 38% at 32% 41%, rgba(251,245,234,.56) 0%, rgba(251,245,234,.22) 55%, rgba(251,245,234,0) 88%),
+  linear-gradient(90deg, rgba(248,241,229,.16) 0%, rgba(248,241,229,.06) 44%, rgba(248,241,229,0) 58%)}
+.coverInner{position:relative; z-index:3; height:100%; opacity:0; transform:translateY(12px); transition:opacity 1.1s var(--ease), transform 1.1s var(--ease); isolation:isolate}
 .cover.has-arrived .coverInner{opacity:1; transform:none}
-/* 封面标题的书法体：把「光影志」三个字从华文行楷裁成 2KB 子集内嵌进来，
-   任何机器打开都一样，不再依赖本机有没有装行楷。
-   改标题文字的话，需要重新裁一次子集（否则新字会回落到宋体）。 */
-@font-face{
-  font-family:"Lumina Brush";
-  src:url(/assets/d06c01839cd54383ada8.ttf) format("truetype");
-  font-weight:400; font-style:normal; font-display:swap;
-}
-.coverTitle{margin:0 0 18px; font-family:"Lumina Brush", var(--serif); font-weight:400; font-size:clamp(56px,9.4vw,124px); line-height:1.1; letter-spacing:.02em; color:var(--green-deep); font-synthesis:none; text-shadow:0 1px 18px rgba(246,243,236,.75)}
-.coverTitle span{color:inherit}
-.coverTitle em{font-style:normal; color:inherit}
-.coverSub{margin:0 0 30px; font-size:14px; font-weight:400; letter-spacing:.2em; color:var(--ink-2); text-shadow:0 1px 10px rgba(246,243,236,.85)}
-.coverEnter{background:rgba(253,252,249,.92); color:var(--green-deep); border:1px solid rgba(43,53,64,.28); border-radius:6px; padding:12px 30px; font-size:14px; letter-spacing:.06em; transition:.25s var(--ease)}
-.coverEnter:hover{background:var(--green-deep); color:#f6f3ec; border-color:transparent}
+.coverBlock{position:absolute; left:32%; top:42.5%; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; text-align:center}
+.coverHead{display:flex; flex-direction:column; align-items:center}
+.coverEyebrow{margin:0 0 18px; font-family:var(--sans); font-size:11.5px; font-weight:500; letter-spacing:.34em; text-indent:.34em; color:rgba(48,44,40,.68)}
+/* 封面题记：集自台北故宫博物院藏宋拓《怀仁集王羲之圣教序》（故帖000013），暖墨 #302C28，等比原拓呈献 */
+.coverTitle{margin:0; display:inline-flex; align-items:center; justify-content:center; line-height:1; position:relative; padding:4px 0 8px}
+.srOnly{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+.coverTitleImg{display:block; width:clamp(228px,20.6vw,310px); height:auto; user-select:none; pointer-events:none}
+.coverSeal{width:20px; height:20px; margin-left:7px; transform:translateY(30px); opacity:.93; flex-shrink:0}
+.coverSub{margin:24px 0 0; font-family:var(--serif); font-size:14.5px; font-weight:400; letter-spacing:.24em; text-indent:.24em; color:rgba(48,44,40,.88); text-shadow:0 1px 12px rgba(251,245,234,.88)}
+.coverEnter{margin-top:34px; background:rgba(252,249,243,.88); color:#302C28; border:1px solid rgba(48,44,40,.24); border-radius:6px; padding:11px 30px; font-size:13.5px; letter-spacing:.14em; text-indent:.14em; box-shadow:0 2px 12px rgba(48,44,40,.08); transition:.25s var(--ease)}
+.coverEnter:hover{background:#302C28; color:#f6f3ec; border-color:transparent}
 .coverEnter span{display:inline-block; margin-left:7px; transition:transform .3s var(--ease)}
 .coverEnter:hover span{transform:translateX(4px)}
 .skip{position:absolute; right:22px; bottom:54px; z-index:5; font-size:12px; color:var(--muted); letter-spacing:.08em; padding:8px 14px; border:1px solid rgba(255,255,255,.5); border-radius:6px; background:rgba(253,252,249,.55)}
 .skip:hover{background:rgba(253,252,249,.9)}
 .cover.no-video .coverVideo{display:none}
 .cover.no-video{background:var(--paper)}
+.cover.no-video .coverBlock{left:50%; top:48%}
 .page{min-height:100vh; display:flex; flex-direction:column}
 .top{position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--line)}
 .topIn{max-width:none; margin:0 auto; min-height:64px; display:flex; align-items:center; gap:28px; padding:0 40px}
@@ -265,8 +262,18 @@ button{font:inherit; color:inherit; background:none; border:0; padding:0; cursor
   .recordMain h1{font-size:23px}
   .entries{grid-template-columns:1fr; gap:18px}
   .entry--text{margin-top:0; min-height:0}
-  .coverTitle{letter-spacing:.07em}
-  .coverSub{font-size:13px; letter-spacing:.14em}
+  .coverVideo{object-position:55.5% 50%}
+  .coverVeil{background:
+    radial-gradient(84% 34% at 28% 14%, rgba(251,245,234,.68) 0%, rgba(251,245,234,.30) 54%, rgba(251,245,234,0) 86%),
+    linear-gradient(180deg, rgba(251,245,234,.24) 0%, rgba(251,245,234,0) 20%, rgba(251,245,234,0) 82%, rgba(248,241,229,.26) 100%)}
+  .coverBlock{position:relative; left:auto; top:auto; transform:none; width:100%; height:100%; align-items:flex-start; justify-content:space-between; text-align:left; padding:max(56px, env(safe-area-inset-top) + 34px) 24px max(62px, env(safe-area-inset-bottom) + 42px)}
+  .coverHead{align-items:flex-start}
+  .coverEyebrow{font-size:9.8px; letter-spacing:.28em; text-indent:0; margin:0 0 11px; padding-left:2px}
+  .coverTitle{padding:0}
+  .coverTitleImg{width:clamp(158px,45.5vw,184px)}
+  .coverSeal{width:13px; height:13px; margin-left:5px; transform:translateY(18px)}
+  .coverSub{margin:15px 0 0; font-size:11.8px; letter-spacing:.14em; text-indent:0; padding-left:2px}
+  .coverEnter{margin-top:0; align-self:center; padding:11px 32px; box-shadow:0 4px 16px rgba(48,44,40,.12); backdrop-filter:blur(4px)}
   .garden{margin-top:0}
   .garden svg{height:auto}
   #screen-archive .garden svg{height:auto}
