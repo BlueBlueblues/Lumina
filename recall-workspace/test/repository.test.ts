@@ -20,4 +20,13 @@ it("recalls memories via local synonym clusters and CJK bigrams when exact words
     expect(r.matches[0]?.excerpt).toContain("滨江灯塔");
     expect(r.matches[0]?.excerpt.length).toBeLessThanOrEqual(500);
   });
+  it("prioritizes rare discriminating entities via BM25F and semantic vector RRF", () => {
+    const corpus = [
+      toMemory({ id: "common-1", ts: "2025-10-10T18:00:00+08:00", note: "傍晚散步，今天很普通。" }),
+      toMemory({ id: "common-2", ts: "2025-10-09T18:00:00+08:00", note: "傍晚去散步，吹了会风。" }),
+      toMemory({ id: "target", ts: "2025-05-01T18:00:00+08:00", note: "沿着滨江步道走了很久，江风很凉，心里堵得慌。" }),
+    ];
+    const r = searchMemories(corpus, { terms: ["江边", "吹风", "心情差"], limit: 8 });
+    expect(r.matches[0]?.id).toBe("target");
+  });
 });

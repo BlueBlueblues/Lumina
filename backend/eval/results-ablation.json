@@ -1,0 +1,272 @@
+{
+  "meta": {
+    "dataset": "Lumina-Recall-Bench-100x60",
+    "version": "1.0",
+    "model": "deepseek-chat",
+    "memoriesCount": 100,
+    "queriesCount": 60,
+    "executedAt": "2026-11-26T13:42:02.543Z",
+    "totalWallSeconds": 131.2
+  },
+  "retrieval": {
+    "R0_keyword": {
+      "mode": "keyword",
+      "overall": {
+        "queries": 48,
+        "hitAt1": 0.8333,
+        "recallAt6": 0.9583,
+        "recallAt12": 0.9792,
+        "mrrAt12": 0.8839,
+        "avgLatencyMs": 0.351
+      },
+      "paraphrase": {
+        "queries": 10,
+        "hitAt1": 0.3,
+        "recallAt6": 0.8,
+        "recallAt12": 0.9,
+        "mrrAt12": 0.5176,
+        "avgLatencyMs": 0.206
+      }
+    },
+    "R1_synonym": {
+      "mode": "synonym",
+      "overall": {
+        "queries": 48,
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 0.376
+      },
+      "paraphrase": {
+        "queries": 10,
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 0.346
+      }
+    },
+    "R2_hybrid": {
+      "mode": "hybrid",
+      "overall": {
+        "queries": 48,
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 2.438
+      },
+      "paraphrase": {
+        "queries": 10,
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 2.445
+      }
+    }
+  },
+  "ablation": [
+    {
+      "group": "G0_Naive_RAG",
+      "queries": 60,
+      "falseSupportRate": 0.0642,
+      "falseSupportDetail": "33/514",
+      "falseConflictRate": 0.0328,
+      "falseConflictDetail": "19/579",
+      "macroF1": 0.8,
+      "perClassF1": {
+        "supported": 0.9371,
+        "conflict": 0.9412,
+        "unknown": 0.5217
+      },
+      "abstentionAccuracy": 0.25,
+      "abstentionDetail": "3/12",
+      "invalidCitationRate": 0.1067,
+      "invalidCitationDetail": "16/150",
+      "avgLatencyMs": 1291,
+      "avgPromptTokens": 779,
+      "avgCompletionTokens": 297,
+      "avgTotalTokens": 1075,
+      "avgApiCalls": 0.98,
+      "confusionMatrix": {
+        "supported": {
+          "supported": 82,
+          "conflict": 0,
+          "unknown": 1
+        },
+        "conflict": {
+          "supported": 1,
+          "conflict": 16,
+          "unknown": 1
+        },
+        "unknown": {
+          "supported": 9,
+          "conflict": 0,
+          "unknown": 6
+        }
+      }
+    },
+    {
+      "group": "G1_Agent_Only",
+      "queries": 60,
+      "falseSupportRate": 0.106,
+      "falseSupportDetail": "16/151",
+      "falseConflictRate": 0.0694,
+      "falseConflictDetail": "15/216",
+      "macroF1": 0.8816,
+      "perClassF1": {
+        "supported": 0.9535,
+        "conflict": 0.9714,
+        "unknown": 0.72
+      },
+      "abstentionAccuracy": 0.5,
+      "abstentionDetail": "6/12",
+      "invalidCitationRate": 0.122,
+      "invalidCitationDetail": "20/164",
+      "avgLatencyMs": 4141,
+      "avgPromptTokens": 4479,
+      "avgCompletionTokens": 531,
+      "avgTotalTokens": 5010,
+      "avgApiCalls": 4,
+      "confusionMatrix": {
+        "supported": {
+          "supported": 82,
+          "conflict": 0,
+          "unknown": 1
+        },
+        "conflict": {
+          "supported": 1,
+          "conflict": 17,
+          "unknown": 0
+        },
+        "unknown": {
+          "supported": 6,
+          "conflict": 0,
+          "unknown": 9
+        }
+      }
+    },
+    {
+      "group": "G2_Provenance_Isolation",
+      "queries": 60,
+      "falseSupportRate": 0.05,
+      "falseSupportDetail": "5/100",
+      "falseConflictRate": 0.0788,
+      "falseConflictDetail": "13/165",
+      "macroF1": 0.9133,
+      "perClassF1": {
+        "supported": 0.988,
+        "conflict": 0.8947,
+        "unknown": 0.8571
+      },
+      "abstentionAccuracy": 1,
+      "abstentionDetail": "12/12",
+      "invalidCitationRate": 0,
+      "invalidCitationDetail": "0/132",
+      "avgLatencyMs": 4823,
+      "avgPromptTokens": 4551,
+      "avgCompletionTokens": 460,
+      "avgTotalTokens": 5012,
+      "avgApiCalls": 3.95,
+      "confusionMatrix": {
+        "supported": {
+          "supported": 82,
+          "conflict": 0,
+          "unknown": 1
+        },
+        "conflict": {
+          "supported": 1,
+          "conflict": 17,
+          "unknown": 0
+        },
+        "unknown": {
+          "supported": 0,
+          "conflict": 3,
+          "unknown": 12
+        }
+      }
+    },
+    {
+      "group": "G3_Deterministic_Guards",
+      "queries": 60,
+      "falseSupportRate": 0.04,
+      "falseSupportDetail": "4/100",
+      "falseConflictRate": 0.0182,
+      "falseConflictDetail": "3/165",
+      "macroF1": 0.9285,
+      "perClassF1": {
+        "supported": 0.9939,
+        "conflict": 0.9091,
+        "unknown": 0.8824
+      },
+      "abstentionAccuracy": 1,
+      "abstentionDetail": "12/12",
+      "invalidCitationRate": 0,
+      "invalidCitationDetail": "0/108",
+      "avgLatencyMs": 4824,
+      "avgPromptTokens": 4551,
+      "avgCompletionTokens": 460,
+      "avgTotalTokens": 5012,
+      "avgApiCalls": 3.95,
+      "confusionMatrix": {
+        "supported": {
+          "supported": 82,
+          "conflict": 0,
+          "unknown": 1
+        },
+        "conflict": {
+          "supported": 0,
+          "conflict": 15,
+          "unknown": 3
+        },
+        "unknown": {
+          "supported": 0,
+          "conflict": 0,
+          "unknown": 15
+        }
+      }
+    },
+    {
+      "group": "G4_Full_Lumina_Triple_Verify",
+      "queries": 60,
+      "falseSupportRate": 0.01,
+      "falseSupportDetail": "1/100",
+      "falseConflictRate": 0.0061,
+      "falseConflictDetail": "1/165",
+      "macroF1": 0.871,
+      "perClassF1": {
+        "supported": 0.9689,
+        "conflict": 0.875,
+        "unknown": 0.7692
+      },
+      "abstentionAccuracy": 1,
+      "abstentionDetail": "12/12",
+      "invalidCitationRate": 0,
+      "invalidCitationDetail": "0/96",
+      "avgLatencyMs": 5371,
+      "avgPromptTokens": 4801,
+      "avgCompletionTokens": 472,
+      "avgTotalTokens": 5273,
+      "avgApiCalls": 4.75,
+      "confusionMatrix": {
+        "supported": {
+          "supported": 78,
+          "conflict": 0,
+          "unknown": 5
+        },
+        "conflict": {
+          "supported": 0,
+          "conflict": 14,
+          "unknown": 4
+        },
+        "unknown": {
+          "supported": 0,
+          "conflict": 0,
+          "unknown": 15
+        }
+      }
+    }
+  ]
+}

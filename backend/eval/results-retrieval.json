@@ -1,0 +1,114 @@
+{
+  "corpus100": [
+    {
+      "label": "R0_Keyword_Exact",
+      "corpusSize": 100,
+      "overall": {
+        "hitAt1": 0.8333,
+        "recallAt6": 0.9583,
+        "recallAt12": 0.9792,
+        "mrrAt12": 0.8839,
+        "avgLatencyMs": 0.409
+      },
+      "paraphrase": {
+        "hitAt1": 0.3,
+        "recallAt6": 0.8,
+        "recallAt12": 0.9,
+        "mrrAt12": 0.5176,
+        "avgLatencyMs": 0.189
+      }
+    },
+    {
+      "label": "R1_Legacy_13Cluster_OR",
+      "corpusSize": 100,
+      "overall": {
+        "hitAt1": 0.9375,
+        "recallAt6": 0.9792,
+        "recallAt12": 0.9792,
+        "mrrAt12": 0.9583,
+        "avgLatencyMs": 0.508
+      },
+      "paraphrase": {
+        "hitAt1": 0.7,
+        "recallAt6": 0.9,
+        "recallAt12": 0.9,
+        "mrrAt12": 0.8,
+        "avgLatencyMs": 0.237
+      }
+    },
+    {
+      "label": "R2_Hybrid_BM25F_Vector_RRF",
+      "corpusSize": 100,
+      "overall": {
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 2.632
+      },
+      "paraphrase": {
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 2.412
+      }
+    }
+  ],
+  "corpus500": [
+    {
+      "label": "R0_Keyword_Exact",
+      "corpusSize": 500,
+      "overall": {
+        "hitAt1": 0.8333,
+        "recallAt6": 0.9167,
+        "recallAt12": 0.9375,
+        "mrrAt12": 0.8693,
+        "avgLatencyMs": 0.607
+      },
+      "paraphrase": {
+        "hitAt1": 0.3,
+        "recallAt6": 0.6,
+        "recallAt12": 0.7,
+        "mrrAt12": 0.4476,
+        "avgLatencyMs": 0.583
+      }
+    },
+    {
+      "label": "R1_Legacy_13Cluster_OR",
+      "corpusSize": 500,
+      "overall": {
+        "hitAt1": 0.9375,
+        "recallAt6": 0.9583,
+        "recallAt12": 0.9583,
+        "mrrAt12": 0.9479,
+        "avgLatencyMs": 0.711
+      },
+      "paraphrase": {
+        "hitAt1": 0.7,
+        "recallAt6": 0.8,
+        "recallAt12": 0.8,
+        "mrrAt12": 0.75,
+        "avgLatencyMs": 0.733
+      }
+    },
+    {
+      "label": "R2_Hybrid_BM25F_Vector_RRF",
+      "corpusSize": 500,
+      "overall": {
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 8.686
+      },
+      "paraphrase": {
+        "hitAt1": 1,
+        "recallAt6": 1,
+        "recallAt12": 1,
+        "mrrAt12": 1,
+        "avgLatencyMs": 9.131
+      }
+    }
+  ]
+}
