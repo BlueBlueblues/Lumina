@@ -97,7 +97,22 @@ export function searchMemories(memories: Memory[], args: SearchArgs) {
     if (!score) return [];
     return [{ memory, score }];
   }).sort((a,b) => b.score-a.score || b.memory.date.localeCompare(a.memory.date));
-  return { matches: matches.slice(0, Math.min(12, Math.max(1,args.limit))).map(({memory}) => ({ id: memory.id, title: memory.title, date: memory.date, excerpt: memory.sources.filter((s) => s.origin === "user").map((s) => s.text).join("\n").slice(0,500) })), total: matches.length, searched: memories.length };
+  const allTerms = [...exact, ...[...expanded.values()].flat()];
+  const buildExcerpt = (memory: Memory) => {
+    const full = memory.sources.filter((s) => s.origin === "user").map((s) => s.text).join("\n");
+    if (full.length <= 500) return full;
+    const lower = full.toLowerCase();
+    let hit = -1;
+    for (const term of allTerms) {
+      const idx = lower.indexOf(term);
+      if (idx !== -1 && (hit === -1 || idx < hit)) hit = idx;
+    }
+    if (hit <= 200) return full.slice(0, 500);
+    const start = Math.max(0, hit - 160);
+    const end = Math.min(full.length, start + 496);
+    return `${start > 0 ? "…" : ""}${full.slice(start, end)}${end < full.length ? "…" : ""}`;
+  };
+  return { matches: matches.slice(0, Math.min(12, Math.max(1,args.limit))).map(({memory}) => ({ id: memory.id, title: memory.title, date: memory.date, excerpt: buildExcerpt(memory) })), total: matches.length, searched: memories.length };
 }
 
 export const memoryRepository = { list: async () => { await window.LuminaRecords?.ready; return (window.LuminaRecords?.list() ?? []).map(toMemory); } };

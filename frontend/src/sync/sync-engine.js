@@ -74,6 +74,7 @@ export async function enableE2eeWithPassphrase(passphrase) {
   if (!state.vaultId) throw new Error("请先开启云同步空间，再启用端到端加密。");
   const key = await deriveVaultKey(passphrase, state.vaultId);
   await kvSet(K.e2eeKey, key);
+  await kvSet(K.cursor, 0);
   await enqueueAllLocalMemories();
   return { e2eeEnabled: true };
 }
@@ -107,9 +108,9 @@ async function enqueueAllLocalMemories() {
   }
 }
 
-export async function createSyncSpace(deviceName, { enableE2ee = false } = {}) {
+export async function createSyncSpace(deviceName, { e2eePassphrase = null } = {}) {
   const data = await syncApi.pair({ mode: "create", deviceName });
-  await storeCredentials(data, deviceName, enableE2ee ? data.recoveryCode : null);
+  await storeCredentials(data, deviceName, e2eePassphrase);
   await enqueueAllLocalMemories();
   return data;
 }

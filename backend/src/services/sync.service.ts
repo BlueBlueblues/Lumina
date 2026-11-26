@@ -170,6 +170,29 @@ async function withTransaction<T>(
   }
 }
 
+async function purgePlaintextEvents(
+  client: PoolClient,
+  vaultId: string,
+  memoryId: string,
+  mode: "delete" | "e2ee",
+): Promise<void> {
+  if (mode === "delete") {
+    await client.query(
+      `DELETE FROM sync_events
+       WHERE vault_id = $1 AND memory_id = $2 AND operation IN ('upsert', 'conflict')`,
+      [vaultId, memoryId],
+    );
+    return;
+  }
+  await client.query(
+    `DELETE FROM sync_events
+     WHERE vault_id = $1 AND memory_id = $2
+       AND operation IN ('upsert', 'conflict')
+       AND COALESCE(payload->>'content', '') NOT LIKE 'LUMINA_E2EE_V1:%'`,
+    [vaultId, memoryId],
+  );
+}
+
 async function insertEvent(
   client: PoolClient,
   auth: DeviceAuth,
@@ -509,6 +532,11 @@ export async function pushChanges(
       const row = updated.rows[0];
       if (!row) throw new Error("Update returned no row.");
       const serverMemory = serializeMemory(row);
+      if (isDelete) {
+        await purgePlaintextEvents(client, auth.vaultId, memory.id, "delete");
+      } else if (serverMemory.content.startsWith("LUMINA_E2EE_V1:")) {
+        await purgePlaintextEvents(client, auth.vaultId, memory.id, "e2ee");
+      }
       await insertEvent(
         client,
         auth,
@@ -658,6 +686,11 @@ export async function resolveConflict(
     if (!row) throw new Error("Resolve update returned no row.");
 
     const memory = serializeMemory(row);
+    if (deletedAtMs !== null) {
+      await purgePlaintextEvents(client, auth.vaultId, memory.id, "delete");
+    } else if (memory.content.startsWith("LUMINA_E2EE_V1:")) {
+      await purgePlaintextEvents(client, auth.vaultId, memory.id, "e2ee");
+    }
     await insertEvent(
       client,
       auth,

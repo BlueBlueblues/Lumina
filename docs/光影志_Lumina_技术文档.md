@@ -69,7 +69,7 @@
 
 光影志是一款面向个人日常记录的**本地优先图文日记与可核验记忆系统**。整套系统在设计与实现中严格遵守四项工程原则：
 
-- **本地优先，断网可用**：未开启云同步时，产品具备完整的记录、浏览、统计与本地备份能力；甚至直接双击单个 `index.html` 文件即可在任意现代浏览器离线运行。服务端故障或模型不可用时，前端自动回退至本地规则，不阻塞读写。
+- **本地优先，断网可用**：未开启云同步时，产品具备完整的记录、浏览、统计与本地备份能力；主存储位于浏览器 IndexedDB，服务端故障、断网或模型不可用时，前端自动回退至本地规则，不阻塞读写。
 - **最小化数据出境，照片留存本机**：原始照片（Blob）与 256px 列表缩略图仅保存在浏览器本地；用户主动开启云同步后，服务端 PostgreSQL 仅存储日记文本、情绪与同步版本号，图片字段仅同步一个布尔标记 `has_photo`。
 - **AI 服务与同步存储解耦**：后端的 AI 推理模块（AI Service）采用无状态设计，只负责转发提示词、校验结构化输出并返回结果，不落盘任何用户文本与图像；云同步模块（Sync Service）仅在用户显式配对后按设备令牌工作。
 - **原话优先，言必有据**：在写作环节优先保留用户的原始表达，禁止使用空泛抒情套话；在回忆检索环节严格区分“用户原话”“记录元数据”“图像模型观察”与“AI 整理正文”四类来源，只有前两者可作为确证引文。
@@ -80,7 +80,7 @@
 
 | 层次 | 技术组件 | 版本 / 规格 | 承担职责 |
 | :--- | :--- | :--- | :--- |
-| **前端主界面** | 原生 HTML / CSS / JS | 单文件构建包（约 6.3 MB） | 封面、概览、拍照/文字记录、极坐标情绪盘、时间线与档案 |
+| **前端主界面** | 原生 HTML / CSS / JS | 模块化静态包（`index.html` 约 223 KB + `/assets/` 哈希资源） | 封面、概览、拍照/文字记录、极坐标情绪盘、时间线与档案 |
 | **存储与同步桥** | ES Module + IndexedDB | `lumina-bridge.js` | `localStorage` 影子同步、原图 Blob 存取、`outbox` 离线队列、冲突面板 |
 | **证据回忆工作台** | Vue 3 + Vite + TypeScript | Vue 3.5 / TS 5.9 | 「聊着找」交互界面、本地工具执行器、线索对勘矩阵与轨迹展示 |
 | **Web 服务框架** | Node.js + Fastify | Node 22 LTS / Fastify 5.2 | 高吞吐 HTTP 路由、请求限流、Helmet 安全响应头、统一异常映射 |
@@ -143,7 +143,7 @@ flowchart LR
 
 - **隐私与数据边界**：AI 接口不得在数据库或日志中留存请求体内的图片与日记正文；日志组件必须自动脱敏 `Authorization` 与 `Cookie` 请求头；云同步与回忆接口响应头强制标记 `Cache-Control: no-store`。
 - **离线韧性与降级体验**：网络中断、后端未配置密钥或上游模型限流时，前端必须明确提示状态并平稳回退至本地规则或保留已输入内容，严禁出现白屏或“存储失败却提示已保存”的静默丢数据行为。
-- **时延与并发预算**：单次视觉观察与辅助成文目标响应时间控制在 1～3 秒内；证据回忆工作台单会话限制最多 4 轮工具交互、全局并发会话上限 32 个、空闲 10 分钟自动回收，防止长尾会话耗尽内存。
+- **时延与并发预算**：单次视觉观察与辅助成文目标响应时间控制在 1～3 秒内；证据回忆工作台单会话限制最多 4 轮工具交互、单 IP 并发上限 4 个、全局并发会话上限 64 个、空闲 3 分钟自动回收，防止长尾会话或单点滥用耗尽内存。
 - **低配服务器资源适配**：生产主机内存仅 1.6 GB，后端 Node.js 进程常驻内存需控制在 100 MB 以内，PostgreSQL 连接池与共享缓冲区需针对性收敛，避免触发系统 OOM。
 
 ---
@@ -410,7 +410,7 @@ sequenceDiagram
 #### 4.3.4 时延、成本控制与本地离线回退
 
 - **精细化 Token 与超时配额**：各接口按输出体量单独设定 `maxTokens`（照片追问 `200`、文字接话 `500`、日记成稿 `800`、视觉观察 `900`、回忆对勘 `3500`），底层客户端设置 45 秒超时与最多 1 次自动重试；工具决策与语义核验固定 `temperature: 0` 保证确定性，创意成文采用 `temperature: 0.4` 兼顾自然度与稳定性。
-- **滑动窗口限流与会话上限**：`rate-limit.ts` 按客户端真实 IP（配合 Nginx `X-Forwarded-For` 与 Fastify `trustProxy`）实施每分钟 30 次滑动窗口限流；回忆会话池上限 32 个，每分钟后台定时清扫过期会话。
+- **滑动窗口限流、每日预算熔断与会话上限**：`rate-limit.ts` 在 `/api/lumina` 与 `/api/recall` 间共享统一限流实例，按客户端真实 IP（配合 Nginx `X-Forwarded-For` 与 Fastify `trustProxy`）实施每分钟 30 次真滑动窗口限流，并内置全局每日调用配额熔断（`AI_DAILY_LIMIT`，默认 1000 次/日）；回忆会话池单 IP 上限 4 个、全局上限 64 个，空闲 3 分钟后自动回收；未启用的遗留通用接口 `/api/ai/*` 在生产环境默认关闭（`ENABLE_LEGACY_AI_ROUTES=false`），收敛公网攻击面。
 - **全链路优雅降级**：前端 `Providers` 在检测到网络错误、502/503 响应或超时后，自动切换至内置本地启发式规则生成过渡提示，确保记录流程在断网或无 Key 环境下依然顺畅闭环。
 
 ---
@@ -465,7 +465,7 @@ sequenceDiagram
     - 若云端当前 `revision === baseRevision`，更新成功并将版本号递增为 `revision + 1`，同时向 `sync_events` 追加一条 `upsert` 或 `delete` 事件；
     - 若云端 `revision !== baseRevision`（说明另一台设备已抢先推送过新版本），服务端拒绝覆盖，向 `sync_events` 记录一条 `conflict` 审计事件，并在响应中同时返回 `serverMemory` 与 `clientMemory`。
 - **游标增量拉取与三向冲突消解**：客户端每次同步只需携带上次读到的最大事件号 `cursor` 请求 `GET /api/sync/pull`，即可按序获取增量变更；遇到冲突时，前端云同步面板直观并列本地版本与云端版本，支持“保留本机”“采用云端”或“手动编辑合并文本”三种策略调用 `POST /api/sync/resolve` 闭环处理。
-- **客户端零知识端到端加密（Web Crypto PBKDF2 + AES-256-GCM）**：用户可在云同步面板一键开启端到端加密（输入恢复码或自定义共享加密口令）。浏览器通过 Web Crypto API 执行 100,000 次 `PBKDF2-HMAC-SHA256` 迭代派生 256 位 `AES-GCM` 密钥，在推送前将 `title`、`content`、`mood`、`tags`、`aiFacts`、`supplement` 与 `original` 全部打包为经过认证加密的密文信封（`LUMINA_E2EE_V1:<iv>.<ciphertext>`），同时抹除明文附属列；服务端 PostgreSQL 仅存储密文与版本号，在不修改任何后端接口的前提下实现了真正的服务端零知识存储。
+- **客户端零知识端到端加密（Web Crypto PBKDF2 + AES-256-GCM）**：用户可在云同步面板输入独立的共享加密口令（至少 8 位，不复用服务端签发的恢复码）一键开启端到端加密。浏览器通过 Web Crypto API 执行 100,000 次 `PBKDF2-HMAC-SHA256` 迭代派生 256 位 `AES-GCM` 密钥，在推送前将 `title`、`content`、`mood`、`tags`、`aiFacts`、`supplement` 与 `original` 全部打包为经过认证加密的密文信封（`LUMINA_E2EE_V1:<iv>.<ciphertext>`），同时抹除明文附属列；服务端收到加密记录或删除墓碑时同步清理 `sync_events` 中该记录的历史明文快照，使服务端 PostgreSQL 不留存明文内容。
 
 ---
 
@@ -475,14 +475,14 @@ sequenceDiagram
 
 项目建立了覆盖契约校验、密码学凭据、证据核验算法、抽取式流式成文、端到端加密同步、持久化存储与生产实机链路的完整验证体系：
 
-1. **单元与组件自动化测试（共 9 个测试套件、59 项测试用例全部通过）**：
-    - 后端测试（`backend/test/`，基于 Vitest，4 个文件共 **39 个测试用例**全部通过）：
-        - `repair.test.ts`（14 项）：验证不相关活动与日期自动降级、直接否定与多维语义反义冲突识别（晴雨/昼夜/独处同行/静噪）、年份/季节/旬期确定性时间核验、抽取式原句选择与 SSE 流式提前吐句、以及 `original` 原始对话同步契约；
+1. **单元与组件自动化测试（共 9 个测试套件、62 项测试用例全部通过）**：
+    - 后端测试（`backend/test/`，基于 Vitest，4 个文件共 **41 个测试用例**全部通过）：
+        - `repair.test.ts`（16 项）：验证不相关活动与日期自动降级、直接否定与多维语义反义冲突识别（晴雨/昼夜/独处同行/静噪）、同子句主语前置否定识别与“特别/未来”非否定防误杀、跨年冬季/上下半年/中文月份/节日边界与旬期确定性时间核验、抽取式原句选择与 SSE 流式提前吐句、以及 `original` 原始对话同步契约；
         - `schemas.test.ts`（10 项）：验证 AI、Lumina、Sync 各接口入参及返回结构的正反向边界拦截；
         - `evidence.test.ts`（10 项）：专项验证证据核验器对伪造记忆 ID、未读记录、非原文子串、`image_model` 视觉推断冒充证据及重复线索对的剔除与降级逻辑，以及澄清选项生成算法；
         - `tokens.test.ts`（5 项）：验证令牌、配对码与恢复码的格式归一化、随机熵及加盐哈希一致性。
-    - 前端与回忆工作台测试（`recall-workspace/test/`，基于 Vitest + `happy-dom` + `fake-indexeddb`，5 个文件共 **20 个测试用例**全部通过）：
-        - `repository.test.ts`（7 项）：验证本地记录到来源分级模型的转换、日期区间过滤、`4 / 2 / 1` 梯度权重排序，以及同义语义簇与否定感知召回；
+    - 前端与回忆工作台测试（`recall-workspace/test/`，基于 Vitest + `happy-dom` + `fake-indexeddb`，5 个文件共 **21 个测试用例**全部通过）：
+        - `repository.test.ts`（8 项）：验证本地记录到来源分级模型的转换、日期区间过滤、`4 / 2 / 1` 梯度权重排序、同义语义簇与否定感知召回、以及长日记命中词居中摘要截取；
         - `records.test.js`（5 项）：验证 IndexedDB 持久化记录仓库恢复、缺失不误删、显式删除意图队列、防旧缓存复活与 `localStorage` 写满时的安全降级；
         - `codec.test.js`（3 项）：验证多端同步时完整原始对话轮次（`original.chat`）的无损往返与 JSONB 键序无关比对；
         - `e2ee.test.js`（2 项）：验证客户端 PBKDF2 + AES-256-GCM 零知识加密信封的加解密往返、敏感字段剥离与异钥防篡改拦截；
@@ -494,16 +494,16 @@ sequenceDiagram
 
 ### 6.2 生产部署拓扑与低配主机调优
 
-系统生产环境运行于阿里云上海地域 ECS 实例（Ubuntu 24.04.5 LTS，Linux 6.8 内核，2 vCPU / 1.6 GiB 内存 / 40 GB SSD，同时配置 2 GiB Swap 兜底），提供公网 HTTP 测试入口与 Tailscale 内网管理入口（`100.82.1.72`）。
+系统生产环境运行于阿里云上海地域 ECS 实例（Ubuntu 24.04.5 LTS，Linux 6.8 内核，2 vCPU / 1.6 GiB 内存 / 40 GB SSD，同时配置 2 GiB Swap 兜底），通过 Nginx 提供同域静态托管与 `/api/` 反向代理，并采用内网隧道进行运维管理。
 
 ```mermaid
 flowchart LR
-    Browser["用户浏览器"] -->|"HTTP :80 / 待启 HTTPS :443"| Nginx["Nginx 1.24\n同域静态托管 + /api 反代"]
-    Tailscale["运维端 (Tailscale 100.82.1.72)"] -.-> Nginx
+    Browser["用户浏览器"] -->|"HTTPS :443 (HTTP/2)"| Nginx["Nginx 1.24\n同域静态托管 + /api 反代"]
+    Tailscale["运维端 (内网隧道)"] -.-> Nginx
 
     subgraph Host["阿里云 ECS (2 vCPU / 1.6 GiB RAM)"]
-        Nginx -->|"静态文件缓存 7d / HTML no-cache"| Static["/opt/lumina/frontend\nindex.html + recall-assets"]
-        Nginx -->|"127.0.0.1:3000 (timeout 60s)"| Node["lumina.service (Fastify)\n常驻内存 ~42 MB"]
+        Nginx -->|"哈希资源 1y immutable / HTML no-cache"| Static["/opt/lumina/frontend\nindex.html + assets + recall-assets"]
+        Nginx -->|"127.0.0.1:3000 (timeout 120s, SSE无缓冲)"| Node["lumina.service (Fastify)\n常驻内存 ~42-75 MB"]
         Node -->|"127.0.0.1:5432 (pool max=5)"| PG["PostgreSQL 16.15\nlumina 数据库"]
         Cron["/etc/cron.d/lumina-backup\n每日 03:30"] -->|"pg_dump 保留 7 天"| Bak["/var/backups/lumina/*.dump"]
         PG -.-> Cron
@@ -514,7 +514,7 @@ flowchart LR
 
 针对 1.6 GiB 小内存实例，部署层面做了三项精细化资源治理：
 
-- **单机同域零跨域损耗**：Nginx 直接托管 `/opt/lumina/frontend` 静态产物，对 `.js/.css/.webp/.woff2` 开启 7 天强缓存与 Gzip 5 级压缩（`index.html` 设为 `no-cache` 确保发版即时生效），并将 `/api/` 同域反代至本机 `127.0.0.1:3000`，省去生产环境 CORS 预检往返；上传体限制对齐为 `16m` 以容纳高清图观察请求。
+- **单机同域零跨域损耗**：Nginx 直接托管 `/opt/lumina/frontend` 静态产物，对 `/assets/` 下的哈希资源开启 `expires 1y; immutable` 强缓存与 Gzip 5 级压缩（`index.html`、`recall-assets/`、`src/` 设为 `no-cache` 确保发版即时生效），并将 `/api/` 同域反代至本机 `127.0.0.1:3000`（关闭 `proxy_buffering` 以保障 SSE 实时流式推送）；上传体限制对齐为 `16m` 以容纳高清图观察请求。
 - **连接池与进程内存收敛**：后端编译为原生 ESM JavaScript 产物运行（`node dist/server.js`），实测常驻物理内存仅约 **41～70 MB**；数据库连接池上限设为 `DATABASE_POOL_MAX=5`，避免空闲连接挤占内存。
 - **开发工具链隔离**：排查并停止空闲时占用近 1 GB 内存的远程 IDE 后台驻留服务，确保主机可用物理内存维持在 650 MB 以上且 Swap 零占用。
 
@@ -585,6 +585,6 @@ flowchart LR
 
 ### A.4 自动化测试统计
 
-- **后端（`backend/test/`）**：4 个测试文件、**39 项测试全部通过**（`repair.test.ts` 14 项、`schemas.test.ts` 10 项、`evidence.test.ts` 10 项、`tokens.test.ts` 5 项）。
-- **前端与证据回忆工作台（`recall-workspace/test/`）**：5 个测试文件、**20 项测试全部通过**（`repository.test.ts` 7 项、`records.test.js` 5 项、`workspace.test.ts` 3 项、`codec.test.js` 3 项、`e2ee.test.js` 2 项）。
-- **全栈合计**：**9 个测试套件、59 项自动化测试全部通过**。
+- **后端（`backend/test/`）**：4 个测试文件、**41 项测试全部通过**（`repair.test.ts` 16 项、`schemas.test.ts` 10 项、`evidence.test.ts` 10 项、`tokens.test.ts` 5 项）。
+- **前端与证据回忆工作台（`recall-workspace/test/`）**：5 个测试文件、**21 项测试全部通过**（`repository.test.ts` 8 项、`records.test.js` 5 项、`workspace.test.ts` 3 项、`codec.test.js` 3 项、`e2ee.test.js` 2 项）。
+- **全栈合计**：**9 个测试套件、62 项自动化测试全部通过**。

@@ -35,7 +35,7 @@ export function validateEvidence(result: EvidenceResult, memories: EvidenceMemor
   return { ...result, comparisons, rejected };
 }
 
-const NEGATION = /没有|没(?:有|去|和|与|下)|不是|并非|从未|未曾|不曾|未去|无(?=雨|雪)|别|未/g;
+const NEGATION = /没有|没(?:有|去|和|与|下|看|见|到|在|买|吃|聊|来|带|拍|提)|不是|不在|不去|不会|不能|不再|并未|并非|从未|未曾|不曾|未去|未见|未到|未下|无(?=雨|雪)|不要|别去|别再/g;
 const SEMANTIC_OPPOSITES: [RegExp, RegExp][] = [
   [/下雨|雨天|淋雨|冒雨/, /晴天|全程晴|艳阳|晴朗|大晴/],
   [/下雪|雪天|暴雪/, /晴天|全程晴|艳阳|晴朗/],
@@ -64,8 +64,8 @@ function hasSemanticOpposite(clue: string, quote: string): boolean {
 export function relationIsPossible(clue: string, quote: string, status: string) {
   const keys = terms(clue);
   const negativeClue = new RegExp(NEGATION.source).test(clue);
-  const negativeChunks = [...quote.matchAll(new RegExp(`(?:${NEGATION.source})([^。！？；\n]{0,40})`,"g"))];
-  const negativeQuote = negativeChunks.some(m=>keys.some(key=>(m[1]??"").includes(key)));
+  const negativeChunks = [...quote.matchAll(new RegExp(`([^，,。！？；\n]{0,12})(?:${NEGATION.source})([^。！？；\n]{0,40})`,"g"))];
+  const negativeQuote = negativeChunks.some(m=>keys.some(key=>(m[1]??"").includes(key)||(m[2]??"").includes(key)));
   const semanticOpposite = hasSemanticOpposite(clue, quote);
   if (status === "conflict" && semanticOpposite && !negativeClue) return true;
   if (status === "conflict") return keys.some(key=>quote.includes(key)) && negativeClue !== negativeQuote;
@@ -81,17 +81,40 @@ const SEASON_MONTHS: Record<string, number[]> = {
   "冬": [12, 1, 2],
 };
 
+const CN_MONTH_MAP: [RegExp, string][] = [
+  [/十二月|腊月/g, "12月"],
+  [/十一月|冬月/g, "11月"],
+  [/十月/g, "10月"],
+  [/九月/g, "9月"],
+  [/八月/g, "8月"],
+  [/七月/g, "7月"],
+  [/六月/g, "6月"],
+  [/五月/g, "5月"],
+  [/四月/g, "4月"],
+  [/三月/g, "3月"],
+  [/二月/g, "2月"],
+  [/一月|正月/g, "1月"],
+];
+
+const FESTIVAL_PATTERN = /中秋|春节|元旦|端午|清明|国庆|重阳|七夕|圣诞/;
+
 export function dateSupport(clue: string, date: string, today: string): "supported" | "conflict" | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  const cleaned = clue.replace(/记录时间|记录日期|时间|发生|大约|大概|可能|记得|好像|约|是|在|为|的|时候|期间|[（）()：:\s]/g, "");
+  if (FESTIVAL_PATTERN.test(clue)) return null;
+  let normalized = clue;
+  for (const [pattern, replacement] of CN_MONTH_MAP) {
+    normalized = normalized.replace(pattern, replacement);
+  }
+  const cleaned = normalized.replace(/记录时间|记录日期|时间|发生|大约|大概|可能|记得|好像|约|是|在|为|的|时候|期间|[（）()：:\s]/g, "");
   if (!/^[\d年月日号\-去今前春夏秋冬初末底中上下半旬天季]+$/.test(cleaned)) return null;
-  const explicit = clue.match(/(\d{4})年/);
-  const relative = clue.includes("去年") ? -1 : clue.includes("前年") ? -2 : clue.includes("今年") ? 0 : null;
+  const explicit = normalized.match(/(\d{4})年/);
+  const relative = normalized.includes("去年") ? -1 : normalized.includes("前年") ? -2 : normalized.includes("今年") ? 0 : null;
   if (explicit && relative !== null && Number(explicit[1]) !== Number(today.slice(0, 4)) + relative) return null;
   const year = explicit ? Number(explicit[1]) : relative !== null ? Number(today.slice(0, 4)) + relative : null;
-  const exact = clue.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+  const exact = normalized.match(/\d{4}-\d{2}-\d{2}/)?.[0];
   if (exact) return exact === date ? "supported" : "conflict";
 
+  const halfYear = cleaned.match(/(上半年|下半年)/)?.[1];
   const seasonMatch = cleaned.match(/([春夏秋冬])(?:季|天)?/);
   const month = cleaned.match(/(\d{1,2})月/)?.[1];
   const day = cleaned.match(/(\d{1,2})[日号]/)?.[1];
@@ -101,12 +124,20 @@ export function dateSupport(clue: string, date: string, today: string): "support
   const recMonth = Number(date.slice(5, 7));
   const recDay = Number(date.slice(8, 10));
 
-  if (year !== null || seasonMatch || month || day || dekad) {
-    if (year !== null && recYear !== year) return "conflict";
-    if (seasonMatch) {
-      const allowedMonths = SEASON_MONTHS[seasonMatch[1]!]!;
-      if (!allowedMonths.includes(recMonth)) return "conflict";
+  if (year !== null || halfYear || seasonMatch || month || day || dekad) {
+    if (seasonMatch?.[1] === "冬" && year !== null) {
+      // 跨年冬季：如“去年冬天(2025)”覆盖 2025-12 与 2026-01/02
+      const inWinterSpan = (recYear === year && recMonth === 12) || (recYear === year + 1 && (recMonth === 1 || recMonth === 2));
+      if (!inWinterSpan) return "conflict";
+    } else {
+      if (year !== null && recYear !== year) return "conflict";
+      if (seasonMatch) {
+        const allowedMonths = SEASON_MONTHS[seasonMatch[1]!]!;
+        if (!allowedMonths.includes(recMonth)) return "conflict";
+      }
     }
+    if (halfYear === "上半年" && recMonth > 6) return "conflict";
+    if (halfYear === "下半年" && recMonth < 7) return "conflict";
     if (month && recMonth !== Number(month)) return "conflict";
     if (day && recDay !== Number(day)) return "conflict";
     if (dekad) {

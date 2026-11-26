@@ -31,6 +31,8 @@ const envSchema = z.object({
   DEEPSEEK_VISION_MODEL: z.string().min(1).default("deepseek-chat"),
   AI_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.4),
   AI_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(0).default(30),
+  AI_DAILY_LIMIT: z.coerce.number().int().min(0).default(1000),
+  ENABLE_LEGACY_AI_ROUTES: booleanFromString,
 
   TOKEN_PEPPER: z.string().default(""),
   PAIRING_CODE_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(600),

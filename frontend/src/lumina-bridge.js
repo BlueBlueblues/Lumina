@@ -12,7 +12,9 @@ import { enqueueMemory } from "./storage/outbox.js";
 import { listConflicts } from "./sync/conflict.js";
 import {
   createSyncSpace,
+  disableE2ee,
   disableSync,
+  enableE2eeWithPassphrase,
   generatePairingCode,
   getSyncState,
   joinSyncSpace,
@@ -555,7 +557,7 @@ function bindCloudUI() {
   $("cloudEnableE2ee")?.addEventListener("click", async () => {
     if (busy) return;
     const pass = $("cloudE2eePass")?.value.trim();
-    if (!pass) return toast("请输入恢复码或自定义加密口令");
+    if (!pass || pass.length < 8) return toast("请输入至少 8 位的独立加密口令（建议勿复用服务端生成的恢复码）");
     busy = true;
     try {
       await enableE2eeWithPassphrase(pass);

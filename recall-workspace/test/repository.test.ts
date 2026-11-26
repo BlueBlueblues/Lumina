@@ -14,4 +14,10 @@ it("recalls memories via local synonym clusters and CJK bigrams when exact words
     expect(r2.matches[0]?.id).toBe("synthetic-rain");
   });
   it("does not mutate the original diary when refining a query", () => {const rows=demoMemories();const before=JSON.stringify(rows);searchMemories(rows,{terms:["小林"],limit:8});expect(JSON.stringify(rows)).toBe(before);});
+  it("centers excerpt around late matches in long diaries", () => {
+    const longNote = "铺垫内容。".repeat(200) + "最后和小林在滨江灯塔下看到了红月亮。";
+    const r = searchMemories([toMemory({ id: "long-1", ts: "2025-10-01T20:00:00+08:00", note: longNote })], { terms: ["灯塔"], limit: 8 });
+    expect(r.matches[0]?.excerpt).toContain("滨江灯塔");
+    expect(r.matches[0]?.excerpt.length).toBeLessThanOrEqual(500);
+  });
 });

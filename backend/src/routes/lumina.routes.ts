@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { sentenceSources, streamGroundedText } from "../services/grounded-writing.js";
 import { config } from "../config.js";
 import { parseWith } from "../lib/parse.js";
-import { createRateLimiter } from "../lib/rate-limit.js";
+import { getSharedAiRateLimiter } from "../lib/rate-limit.js";
 import {
   luminaObserveRequestSchema,
   luminaPhotoQuestionRequestSchema,
@@ -19,7 +19,7 @@ import {
 } from "../services/lumina.service.js";
 
 export const luminaRoutes: FastifyPluginAsync = async (app) => {
-  const rateLimit = createRateLimiter(config.AI_RATE_LIMIT_PER_MINUTE);
+  const rateLimit = getSharedAiRateLimiter(config.AI_RATE_LIMIT_PER_MINUTE, config.AI_DAILY_LIMIT);
 
   app.post("/observe", { preHandler: rateLimit }, async (request) => {
     const input = parseWith(

@@ -26,22 +26,27 @@ sources 必须引用 user 或 metadata 来源。image_model 是未核对的图�
 
 type ToolCall = { id: string; name: string; args: Record<string, unknown> };
 interface Session {
-  expires: number; busy: boolean; rounds: number; searched: boolean;
+  ip: string; expires: number; busy: boolean; rounds: number; searched: boolean;
   messages: ChatCompletionMessageParam[]; pending: ToolCall[];
   candidates: Set<string>; loaded: Map<string, EvidenceMemory>;
 }
 const sessions = new Map<string, Session>();
-const ttl = 10 * 60_000;
+const ttl = 3 * 60_000;
+const MAX_GLOBAL_SESSIONS = 64;
+const MAX_SESSIONS_PER_IP = 4;
 function sweep() { for (const [id, s] of sessions) if (s.expires < Date.now() && !s.busy) sessions.delete(id); }
-const sessionSweeper = setInterval(sweep, 60_000);
+const sessionSweeper = setInterval(sweep, 30_000);
 sessionSweeper.unref();
 
-export async function startEvidenceRecall(input: {query: string; corrections: string[]; today: string}) {
+export async function startEvidenceRecall(input: {query: string; corrections: string[]; today: string}, clientIp = "unknown") {
   sweep();
-  if (sessions.size >= 32) throw new AppError(503, "recall_busy", "回忆服务繁忙，请稍后重试。");
+  let ipCount = 0;
+  for (const s of sessions.values()) if (s.ip === clientIp) ipCount++;
+  if (ipCount >= MAX_SESSIONS_PER_IP) throw new AppError(429, "recall_ip_busy", "当前设备进行的回忆检索过多，请稍候再试。");
+  if (sessions.size >= MAX_GLOBAL_SESSIONS) throw new AppError(503, "recall_busy", "回忆服务繁忙，请稍后重试。");
   const sessionId = randomUUID();
   const session: Session = {
-    expires: Date.now() + ttl, busy: true, rounds: 0, searched: false, pending: [], candidates: new Set(), loaded: new Map(),
+    ip: clientIp, expires: Date.now() + ttl, busy: true, rounds: 0, searched: false, pending: [], candidates: new Set(), loaded: new Map(),
     messages: [{ role: "system", content: PROMPT }, { role: "user", content: JSON.stringify(input) }],
   };
   sessions.set(sessionId, session);
@@ -91,21 +96,30 @@ async function advance(sessionId: string, session: Session): Promise<unknown> {
   if (!calls.length) return finish(sessionId, session);
   if (calls.length > 4) return finish(sessionId, session);
   const pending: ToolCall[] = [];
+  const validCalls: typeof calls = [];
+  const plannedLoads = new Set<string>();
   for (const call of calls) {
     let args: Record<string, unknown>;
     try {
       const raw: unknown = JSON.parse(call.function.arguments);
-      if (call.function.name === "search_memories") args = searchArgsSchema.parse(raw);
-      else if (call.function.name === "get_memory") {
+      if (call.function.name === "search_memories") {
+        args = searchArgsSchema.parse(raw);
+      } else if (call.function.name === "get_memory") {
         args = z.object({ id: z.string().min(1).max(140) }).parse(raw);
-        if (!session.candidates.has(String(args.id)) || session.loaded.has(String(args.id)) || session.loaded.size + pending.length >= 6) {
-          return finish(sessionId, session);
+        const targetId = String(args.id);
+        if (!session.candidates.has(targetId) || session.loaded.has(targetId) || plannedLoads.has(targetId) || session.loaded.size + plannedLoads.size >= 6) {
+          continue;
         }
-      } else return finish(sessionId, session);
-    } catch { throw new AppError(502, "invalid_tool_call", "模型返回了无法执行的工具参数，请重试。"); }
+        plannedLoads.add(targetId);
+      } else {
+        continue;
+      }
+    } catch { continue; }
+    validCalls.push(call);
     pending.push({ id: call.id, name: call.function.name, args });
   }
-  session.messages.push({ role: "assistant", content: response.content, tool_calls: calls });
+  if (!pending.length) return finish(sessionId, session);
+  session.messages.push({ role: "assistant", content: response.content, tool_calls: validCalls });
   session.pending = pending;
   return { sessionId, phase: "tools", calls: pending };
 }

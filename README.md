@@ -57,7 +57,6 @@ lumina/
 │   ├── index.html              # 模块化前端入口（纸墨 UI）
 │   ├── assets/                 # 构建资源（JS / CSS / WebP / 字体）
 │   ├── recall-assets/          # 证据回忆工作台构建产物
-│   ├── README-frontend.txt     # 原前端说明
 │   ├── 接入说明.md              # 原前端后端契约
 │   └── src/
 │       ├── lumina-bridge.js    # localStorage ↔ IndexedDB / 云同步桥

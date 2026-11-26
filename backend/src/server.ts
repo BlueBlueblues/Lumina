@@ -22,6 +22,10 @@ const app = Fastify({
 await app.register(helmet, {
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" },
+  xContentTypeOptions: false,
+  frameguard: false,
+  referrerPolicy: false,
+  hsts: false,
 });
 
 await app.register(cors, {
@@ -74,7 +78,9 @@ app.get("/api/health", async () => ({
   aiConfigured: deepSeek.configured,
 }));
 
-await app.register(aiRoutes, { prefix: "/api/ai" });
+if (config.ENABLE_LEGACY_AI_ROUTES) {
+  await app.register(aiRoutes, { prefix: "/api/ai" });
+}
 await app.register(luminaRoutes, { prefix: "/api/lumina" });
 await app.register(syncRoutes, { prefix: "/api/sync" });
 await app.register(evidenceRoutes, { prefix: "/api/recall" });

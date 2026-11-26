@@ -39,4 +39,21 @@ describe('expanded temporal and semantic opposition verification', () => {
     expect(relationIsPossible('周围很安静', '街上非常喧闹嘈杂', 'conflict')).toBe(true);
     expect(relationIsPossible('当时独自一人', '和小林一起同行', 'supported')).toBe(false);
   });
+
+  it('does not misclassify 特别/未来 as negations and catches 不在', () => {
+    expect(relationIsPossible('和小林去河边', '今天特别开心，和小林去了河边。', 'supported')).toBe(true);
+    expect(relationIsPossible('在河边散步', '聊了很多未来的打算，在河边散步到很晚。', 'supported')).toBe(true);
+    expect(relationIsPossible('小林在场', '那天小林不在。', 'supported')).toBe(false);
+  });
+
+  it('handles cross-year winter, half-year, Chinese months, and avoids festival mis-matching', () => {
+    expect(dateSupport('去年冬天', '2026-01-15', '2026-11-26')).toBe('supported');
+    expect(dateSupport('去年冬天', '2025-12-20', '2026-11-26')).toBe('supported');
+    expect(dateSupport('去年冬天', '2025-01-15', '2026-11-26')).toBe('conflict');
+    expect(dateSupport('去年上半年', '2025-11-03', '2026-11-26')).toBe('conflict');
+    expect(dateSupport('去年上半年', '2025-04-12', '2026-11-26')).toBe('supported');
+    expect(dateSupport('去年三月', '2025-03-10', '2026-11-26')).toBe('supported');
+    expect(dateSupport('去年三月', '2025-07-01', '2026-11-26')).toBe('conflict');
+    expect(dateSupport('去年中秋', '2025-11-28', '2026-11-26')).toBeNull();
+  });
 });
