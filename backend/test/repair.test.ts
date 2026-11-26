@@ -24,3 +24,19 @@ describe('grounded source-only writing',()=>{
 describe('source sync contract',()=>{
  it('accepts originals separately from generated content',()=>{const parsed=memorySyncSchema.parse({id:'r',title:'',content:'生成正文',original:{version:1,note:'原话',extra:'补充',chat:[{role:'me',text:'第二句'},{role:'it',text:'AI回复'}]},tags:[],aiFacts:[],hasPhoto:false,createdAt:1,updatedAt:1,revision:0,deviceId:'9e10848a-3a88-4c6c-b829-07cf2ca43719'});expect(parsed.original?.chat).toHaveLength(2);});
 });
+
+describe('expanded temporal and semantic opposition verification', () => {
+  it('verifies seasonal and dekad temporal clues deterministically', () => {
+    expect(dateSupport('去年秋天', '2025-09-25', '2026-11-22')).toBe('supported');
+    expect(dateSupport('去年春天', '2025-09-25', '2026-11-22')).toBe('conflict');
+    expect(dateSupport('9月下旬', '2025-09-25', '2026-11-22')).toBe('supported');
+    expect(dateSupport('9月上旬', '2025-09-25', '2026-11-22')).toBe('conflict');
+  });
+
+  it('recognizes multi-dimensional semantic oppositions beyond rain/sun', () => {
+    expect(relationIsPossible('那天是白天去的', '深夜才到那里', 'conflict')).toBe(true);
+    expect(relationIsPossible('当时独自一人', '和小林一起同行', 'conflict')).toBe(true);
+    expect(relationIsPossible('周围很安静', '街上非常喧闹嘈杂', 'conflict')).toBe(true);
+    expect(relationIsPossible('当时独自一人', '和小林一起同行', 'supported')).toBe(false);
+  });
+});

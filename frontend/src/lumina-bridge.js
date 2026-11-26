@@ -264,7 +264,7 @@ async function refreshCloudUI() {
   const status = $("cloudStatus");
   if (status) {
     status.textContent = state.enabled
-      ? `云同步已开启 · 上次同步：${state.lastAt ? new Date(state.lastAt).toLocaleString() : "尚未同步"}`
+      ? `云同步已开启${state.e2eeEnabled ? "（🔒 零知识加密）" : ""} · 上次同步：${state.lastAt ? new Date(state.lastAt).toLocaleString() : "尚未同步"}`
       : "当前：本地模式（所有数据只在本机）";
     status.classList.toggle("online", state.enabled);
   }
@@ -296,6 +296,7 @@ async function refreshCloudUI() {
   if (enabledPanel) enabledPanel.hidden = !state.enabled;
 
   if ($("cloudVault")) $("cloudVault").textContent = shortId(state.vaultId);
+  if ($("cloudE2eeState")) $("cloudE2eeState").textContent = state.e2eeEnabled ? "已启用 (AES-256-GCM)" : "未启用（明文同步）";
   if ($("cloudDevice")) $("cloudDevice").textContent = shortId(state.deviceId);
   if ($("cloudLast")) {
     $("cloudLast").textContent = state.lastAt
@@ -551,6 +552,19 @@ function bindCloudUI() {
   $("cloudRecover")?.addEventListener("click", onRecoverSync);
   $("cloudSyncNow")?.addEventListener("click", onSyncNow);
   $("cloudPairCode")?.addEventListener("click", onGeneratePairingCode);
+  $("cloudEnableE2ee")?.addEventListener("click", async () => {
+    if (busy) return;
+    const pass = $("cloudE2eePass")?.value.trim();
+    if (!pass) return toast("请输入恢复码或自定义加密口令");
+    busy = true;
+    try {
+      await enableE2eeWithPassphrase(pass);
+      if ($("cloudE2eePass")) $("cloudE2eePass").value = "";
+      await refreshCloudUI();
+      toast("已开启端到端零知识加密，正在加密推送");
+      await runSync({ silent: false });
+    } catch (err) { toast(errorMessage(err)); } finally { busy = false; }
+  });
   $("cloudDisable")?.addEventListener("click", onDisableSync);
 
   $("cloudPurge")?.addEventListener("change", () => {

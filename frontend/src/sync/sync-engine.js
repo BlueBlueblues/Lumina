@@ -26,6 +26,12 @@ import {
   listConflicts,
   removeConflict,
 } from "./conflict.js";
+import {
+  decryptMemoryPayload,
+  deriveVaultKey,
+  encryptMemoryPayload,
+  isEncryptedMemory,
+} from "./e2ee.js";
 
 const K = {
   token: "syncToken",
@@ -34,12 +40,13 @@ const K = {
   cursor: "syncCursor",
   lastAt: "syncLastAt",
   deviceName: "syncDeviceName",
+  e2eeKey: "syncE2eeKey",
 };
 
 let running = null;
 
 export async function getSyncState() {
-  const [token, vaultId, deviceId, cursor, lastAt, deviceName] =
+  const [token, vaultId, deviceId, cursor, lastAt, deviceName, e2eeKey] =
     await Promise.all([
       kvGet(K.token),
       kvGet(K.vault),
@@ -47,6 +54,7 @@ export async function getSyncState() {
       kvGet(K.cursor),
       kvGet(K.lastAt),
       kvGet(K.deviceName),
+      kvGet(K.e2eeKey),
     ]);
 
   return {
@@ -56,43 +64,66 @@ export async function getSyncState() {
     cursor: Number(cursor) || 0,
     lastAt: typeof lastAt === "number" ? lastAt : null,
     deviceName: deviceName ?? "",
+    e2eeEnabled: Boolean(e2eeKey),
     enabled: Boolean(token && vaultId && deviceId),
   };
 }
 
-async function storeCredentials(data, deviceName) {
+export async function enableE2eeWithPassphrase(passphrase) {
+  const state = await getSyncState();
+  if (!state.vaultId) throw new Error("请先开启云同步空间，再启用端到端加密。");
+  const key = await deriveVaultKey(passphrase, state.vaultId);
+  await kvSet(K.e2eeKey, key);
+  await enqueueAllLocalMemories();
+  return { e2eeEnabled: true };
+}
+
+export async function disableE2ee() {
+  await kvDelete(K.e2eeKey);
+  return { e2eeEnabled: false };
+}
+
+async function storeCredentials(data, deviceName, passphraseForE2ee = null) {
   await kvSet(K.token, data.deviceToken);
   await kvSet(K.vault, data.vaultId);
   await kvSet(K.device, data.deviceId);
   await kvSet(K.cursor, 0);
   await kvSet(K.lastAt, null);
   if (deviceName) await kvSet(K.deviceName, deviceName);
+  if (passphraseForE2ee) {
+    try {
+      const key = await deriveVaultKey(passphraseForE2ee, data.vaultId);
+      await kvSet(K.e2eeKey, key);
+    } catch {
+      // Fallback gracefully if subtle crypto is unavailable
+    }
+  }
 }
 
 async function enqueueAllLocalMemories() {
   const memories = await listMemories();
   for (const memory of memories) {
-    await enqueueMemory(memory.id, 0);
+    await enqueueMemory(memory.id, memory.revision ?? 0);
   }
 }
 
-export async function createSyncSpace(deviceName) {
+export async function createSyncSpace(deviceName, { enableE2ee = false } = {}) {
   const data = await syncApi.pair({ mode: "create", deviceName });
-  await storeCredentials(data, deviceName);
+  await storeCredentials(data, deviceName, enableE2ee ? data.recoveryCode : null);
   await enqueueAllLocalMemories();
   return data;
 }
 
-export async function joinSyncSpace(code, deviceName) {
+export async function joinSyncSpace(code, deviceName, { recoveryCodeForE2ee = null } = {}) {
   const data = await syncApi.pair({ mode: "join", code, deviceName });
-  await storeCredentials(data, deviceName);
+  await storeCredentials(data, deviceName, recoveryCodeForE2ee);
   await enqueueAllLocalMemories();
   return data;
 }
 
-export async function recoverSyncSpace(recoveryCode, deviceName) {
+export async function recoverSyncSpace(recoveryCode, deviceName, { enableE2ee = false } = {}) {
   const data = await syncApi.pair({ mode: "recover", recoveryCode, deviceName });
-  await storeCredentials(data, deviceName);
+  await storeCredentials(data, deviceName, enableE2ee ? recoveryCode : null);
   await enqueueAllLocalMemories();
   return data;
 }
@@ -121,6 +152,7 @@ export async function disableSync(purgeCloudData = false, confirmPurge) {
   await kvDelete(K.device);
   await kvDelete(K.cursor);
   await kvDelete(K.lastAt);
+  await kvDelete(K.e2eeKey);
 
   await resetAllRevisions();
   await clearConflicts();
@@ -151,6 +183,7 @@ export function syncNow() {
 
 async function pullAll(token) {
   let cursor = Number(await kvGet(K.cursor)) || 0;
+  const e2eeKey = await kvGet(K.e2eeKey);
   let hasMore = true;
   let pages = 0;
   let applied = 0;
@@ -158,7 +191,7 @@ async function pullAll(token) {
   while (hasMore && pages < 20) {
     const page = await syncApi.pull(cursor, 100, token);
     for (const event of page?.events ?? []) {
-      if (await applyRemoteEvent(event)) applied += 1;
+      if (await applyRemoteEvent(event, e2eeKey)) applied += 1;
     }
     cursor = Number(page?.nextCursor) || cursor;
     await kvSet(K.cursor, cursor);
@@ -169,10 +202,17 @@ async function pullAll(token) {
   return applied;
 }
 
-async function applyRemoteEvent(event) {
-  const memory = event?.memory;
+async function applyRemoteEvent(event, e2eeKey = null) {
+  let memory = event?.memory;
   if (!memory?.id) return false;
   if (await hasUnsynced(memory.id)) return false;
+  if (isEncryptedMemory(memory) && e2eeKey) {
+    try {
+      memory = await decryptMemoryPayload(memory, e2eeKey);
+    } catch {
+      return false;
+    }
+  }
   await applyRemoteMemory(memory);
   return true;
 }
@@ -180,6 +220,7 @@ async function applyRemoteEvent(event) {
 async function pushAll(token) {
   const pending = await listPending(50);
   if (!pending.length) return 0;
+  const e2eeKey = await kvGet(K.e2eeKey);
 
   const sent = [];
 
@@ -196,10 +237,12 @@ async function pushAll(token) {
     if (!memory.deviceId) {
       memory = { ...memory, deviceId: await getDeviceId() };
     }
-    const bytes = new TextEncoder().encode(JSON.stringify(toSyncPayload(memory))).length;
+    const rawPayload = toSyncPayload(memory);
+    const wirePayload = e2eeKey ? await encryptMemoryPayload(rawPayload, e2eeKey) : rawPayload;
+    const bytes = new TextEncoder().encode(JSON.stringify(wirePayload)).length;
     const currentBytes = sent.reduce((sum, entry) => sum + entry.bytes, 0);
     if (sent.length && currentBytes + bytes > 8 * 1024 * 1024) break;
-    sent.push({ item, memory, bytes });
+    sent.push({ item, memory, wirePayload, bytes });
     await markSending(item.seq);
   }
 
@@ -208,9 +251,9 @@ async function pushAll(token) {
   let response;
   try {
     response = await syncApi.push(
-      sent.map(({ item, memory }) => ({
+      sent.map(({ item, memory, wirePayload }) => ({
         baseRevision: item.baseRevision ?? memory.revision ?? 0,
-        memory: toSyncPayload(memory),
+        memory: wirePayload,
       })),
       token,
     );
@@ -247,13 +290,21 @@ async function pushAll(token) {
     }
 
     if (result.status === "conflict") {
+      let serverMem = result.serverMemory ?? null;
+      if (serverMem && isEncryptedMemory(serverMem) && e2eeKey) {
+        try {
+          serverMem = await decryptMemoryPayload(serverMem, e2eeKey);
+        } catch {
+          // keep encrypted if key mismatch
+        }
+      }
       if (
-        result.serverMemory &&
-        sameContent(entry.memory, result.serverMemory)
+        serverMem &&
+        sameContent(entry.memory, serverMem)
       ) {
         await updateLocalRevision(
           entry.memory.id,
-          result.serverMemory.revision,
+          serverMem.revision,
         );
         await remove(entry.item.seq);
         applied += 1;
@@ -264,7 +315,7 @@ async function pushAll(token) {
       await addConflict({
         memoryId: entry.memory.id,
         local: entry.memory,
-        server: result.serverMemory ?? null,
+        server: serverMem,
         baseRevision:
           entry.item.baseRevision ?? entry.memory.revision ?? 0,
       });
@@ -280,6 +331,7 @@ async function pushAll(token) {
 export async function resolveConflictWithServer(memoryId, strategy, merged = null) {
   const state = await getSyncState();
   if (!state.enabled) throw new Error("云同步尚未开启。");
+  const e2eeKey = await kvGet(K.e2eeKey);
 
   const conflicts = await listConflicts();
   const conflict = conflicts.find((item) => item.memoryId === memoryId);
@@ -289,17 +341,21 @@ export async function resolveConflictWithServer(memoryId, strategy, merged = nul
     if (!conflict.server) {
       throw new Error("服务器上没有这条记录，请保留本地版本或重新同步。");
     }
-    await applyRemoteMemory(conflict.server);
+    const serverDecoded =
+      isEncryptedMemory(conflict.server) && e2eeKey
+        ? await decryptMemoryPayload(conflict.server, e2eeKey)
+        : conflict.server;
+    await applyRemoteMemory(serverDecoded);
     await removeConflict(memoryId);
     await removeByMemoryId(memoryId);
-    return { status: "server_kept", memory: conflict.server };
+    return { status: "server_kept", memory: serverDecoded };
   }
 
   const local = await getMemory(memoryId);
   const source = strategy === "merged" ? merged : local;
   if (!source) throw new Error("本地记录已不存在。");
 
-  const payload = {
+  const rawPayload = {
     title: source.title ?? "",
     content: source.content ?? "",
     ...(source.recordDate ? { recordDate: source.recordDate } : {}),
@@ -311,6 +367,7 @@ export async function resolveConflictWithServer(memoryId, strategy, merged = nul
     hasPhoto: Boolean(source.hasPhoto),
     deletedAt: source.deletedAt ?? null,
   };
+  const payload = e2eeKey ? await encryptMemoryPayload(rawPayload, e2eeKey) : rawPayload;
 
   const baseRevision =
     conflict.server?.revision ?? conflict.baseRevision ?? 0;
@@ -320,10 +377,14 @@ export async function resolveConflictWithServer(memoryId, strategy, merged = nul
     state.token,
   );
 
-  await applyRemoteMemory(response.memory);
+  const resolvedMem =
+    isEncryptedMemory(response.memory) && e2eeKey
+      ? await decryptMemoryPayload(response.memory, e2eeKey)
+      : response.memory;
+  await applyRemoteMemory(resolvedMem);
   await removeConflict(memoryId);
   await removeByMemoryId(memoryId);
-  return response;
+  return { ...response, memory: resolvedMem };
 }
 
 function toSyncPayload(memory) {
